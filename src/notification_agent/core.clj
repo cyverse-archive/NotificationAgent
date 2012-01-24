@@ -1,7 +1,7 @@
-(ns iplant.notificationagent
+(ns notification-agent.core
   (:use [compojure.core]
         [ring.middleware keyword-params nested-params]
-        [iplant.job-status])
+        [notification-agent.job-status])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]))
 

@@ -1,4 +1,4 @@
-(ns iplant.common)
+(ns notification-agent.common)
 
 (defn resp
   "Returns a value that Ring can use to generate a response.

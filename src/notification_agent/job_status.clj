@@ -1,10 +1,10 @@
-(ns iplant.job-status
+(ns notification-agent.job-status
   (:use [clojure.string :only (lower-case)]
         [clj-time.core :only (default-time-zone now)]
         [clj-time.format :only (formatter unparse with-zone)]
-        [iplant.config]
-        [iplant.common])
-  (:require [clojure.contrib.json :as json]
+        [notification-agent.config]
+        [notification-agent.common])
+  (:require [clojure.data.json :as json]
 	    [clojure-commons.json :as cc-json]
             [clj-http.client :as client]
             [clojure-commons.osm :as osm])
@@ -149,14 +149,10 @@
 (defn- send-msg
   "Forwards a message to zero or more recipients.
 
-   TODO: find a way to specify a list of values for a single
-   property in a properties file, then try this out to see if
-   it works.
-
    Parameters:
      msg - the message to send."
   [msg]
-  (doall #(client/post % {:body msg}) update-urls))
+  (doall #(client/post % {:body msg}) notification-recipients))
 
 (defn- persist-and-send-msg
   "Persists a message in the OSM and sends it to any receivers.
