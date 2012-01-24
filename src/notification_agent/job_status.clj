@@ -169,7 +169,8 @@
   (doall (map #(send-msg-to-recipient % msg) notification-recipients)))
 
 (defn- persist-and-send-msg
-  "Persists a message in the OSM and sends it to any receivers.
+  "Persists a message in the OSM and sends it to any receivers and returns
+   the state object.
 
    Parameters:
      uuid  - the UUID of the OSM object that represents the job.
@@ -177,10 +178,12 @@
   [uuid state]
   (let [msg (state-to-msg state)]
     (persist-msg msg)
-    (send-msg (json/json-str msg))))
+    (send-msg (json/json-str msg)))
+  state)
 
 (defn- handle-just-completed-job
-  "Handles a job status update request for a job that has just completed.
+  "Handles a job status update request for a job that has just completed
+   and returns the state object.
 
    Parameters:
      uuid  - the UUID of the OSM object that represents the job
@@ -192,7 +195,7 @@
 (defn- handle-updated-job-status
   "Handles a job status update request for a job whose status has actually
    changed.  Job status updates for which the job status did not change are
-   ignored.
+   ignored.  The state object, which may have been updated, is returned.
 
    Parameters:
      uuid  - the UUID of the OSM object that represents the job
@@ -201,6 +204,17 @@
   (if (job-just-completed state)
     (handle-just-completed-job uuid (add-completion-date state))
     (persist-and-send-msg uuid state)))
+
+(defn update-job-state
+  "Updates the job state in the OSM.  This is done so that the completion
+   date can be added and the previous status can be updated.
+
+   Parameters:
+     uuid  - the UUID of the OSM object that represents the job
+     state - the object representing the state of the job"
+  [uuid state]
+  (osm/update-object jobs-osm uuid
+    (assoc state :previous_status (:status state))))
 
 (defn handle-job-status
   "Handles a job status update request with the given body.
@@ -212,5 +226,5 @@
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
     (if (job-status-changed state)
-      (handle-updated-job-status uuid state))
+      (update-job-state uuid (handle-updated-job-status uuid state)))
     (resp 200 nil)))
