@@ -7,8 +7,10 @@
   (:require [clojure.data.json :as json]
 	    [clojure-commons.json :as cc-json]
             [clj-http.client :as client]
-            [clojure-commons.osm :as osm])
-  (:import java.net.URI))
+            [clojure-commons.osm :as osm]
+            [clojure.tools.logging :as log])
+  (:import [java.net URI]
+           [java.io IOException]))
 
 (defn- extract-path
   "Extracts the path component from a URI.
@@ -146,13 +148,25 @@
   [msg]
   (osm/save-object notifications-osm msg))
 
+(defn- send-msg-to-recipient
+  "Forawards a message to a single recipient.
+
+   Parameters:
+     url - the URL to send the message to.
+     msg - the message to send."
+  [url msg]
+  (try
+    (client/post url {:body msg})
+    (catch IOException e
+      (log/error (str "unable to send message to " url ": " e)))))
+
 (defn- send-msg
   "Forwards a message to zero or more recipients.
 
    Parameters:
      msg - the message to send."
   [msg]
-  (doall #(client/post % {:body msg}) notification-recipients))
+  (doall (map #(send-msg-to-recipient % msg) notification-recipients)))
 
 (defn- persist-and-send-msg
   "Persists a message in the OSM and sends it to any receivers.
@@ -163,7 +177,7 @@
   [uuid state]
   (let [msg (state-to-msg state)]
     (persist-msg msg)
-    (send-msg msg)))
+    (send-msg (json/json-str msg))))
 
 (defn- handle-just-completed-job
   "Handles a job status update request for a job that has just completed.
