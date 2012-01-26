@@ -1,6 +1,11 @@
 (ns notification-agent.json
   (:import [org.codehaus.jackson JsonFactory JsonToken]))
 
+;; The notification query service gets a lot of data back from the OSM, and
+;; clojure.data.json was taking nearly two seconds to parse it all.  The
+;; purpose of the functions in this namespace is to parse the JSON in a way
+;; that is compatible with clojure.data.json, but to do it faster.
+
 (def json-factory ^{:private true} (JsonFactory.))
 
 ;; Convenience vars for JsonToken enumeration constants.
