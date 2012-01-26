@@ -7,7 +7,8 @@
                  [swank-clojure "1.4.0-SNAPSHOT"]
                  [org.iplantc/clojure-commons "1.1.0-SNAPSHOT"]
                  [clj-http "0.2.7"]
-                 [clj-time "0.3.4"]]
+                 [clj-time "0.3.4"]
+                 [org.codehaus.jackson/jackson-core-asl "1.9.3"]]
   :dev-dependencies [[lein-ring "0.4.5"]
                      [swank-clojure "1.2.1"]]
   :ring {:handler notification-agent.core/app}
