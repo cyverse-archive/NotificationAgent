@@ -14,7 +14,7 @@ program=notificationagent
 jarfile=notificationagent-1.0.0-SNAPSHOT-standalone.jar
 jar=/usr/local/lib/${program}/${jarfile}
 conf=/etc/${program}
-mainclass=${program}.core
+mainclass=notification_agent.core
 
 ################################################################################
 
