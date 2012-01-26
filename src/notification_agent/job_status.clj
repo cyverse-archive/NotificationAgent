@@ -42,7 +42,7 @@
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
   [request]
-  (client/post email-url
+  (client/post (email-url)
                {:body (json/json-str request)
                 :content-type :json}))
 
@@ -50,7 +50,7 @@
   "Formats an e-mail request that can be sent to the iPlant e-mail service."
   [email state]
   {:to email
-   :template email-template
+   :template (email-template)
    :subject (str (:name state) " status changed.")
    :values {:analysisname (:name state)
             :analysisstatus (:status state)
@@ -71,7 +71,7 @@
    notifications were requested."
   [state]
   (let [addr (:email state)]
-    (if (and email-enabled (email-requested state) (not (nil? addr)))
+    (if (and (email-enabled) (email-requested state) (not (nil? addr)))
       (send-email-request (format-email-request addr state)))))
 
 (defn- state-to-msg
@@ -102,7 +102,7 @@
 (defn- persist-msg
   "Persists a message in the OSM."
   [msg]
-  (osm/save-object notifications-osm msg))
+  (osm/save-object (notifications-osm) msg))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."
@@ -115,7 +115,7 @@
 (defn- send-msg
   "Forwards a message to zero or more recipients."
   [msg]
-  (doall (map #(send-msg-to-recipient % msg) notification-recipients)))
+  (doall (map #(send-msg-to-recipient % msg) (notification-recipients))))
 
 (defn- persist-and-send-msg
   "Persists a message in the OSM and sends it to any receivers and returns
@@ -146,7 +146,7 @@
   "Updates the job state in the OSM.  This is done so that the completion
    date can be added and the previous status can be updated."
   [uuid state]
-  (osm/update-object jobs-osm uuid
+  (osm/update-object (jobs-osm) uuid
     (assoc state :previous_status (:status state))))
 
 (defn handle-job-status

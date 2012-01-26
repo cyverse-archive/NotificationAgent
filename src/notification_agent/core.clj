@@ -1,12 +1,18 @@
 (ns notification-agent.core
+  (:gen-class)
   (:use [compojure.core]
         [ring.middleware keyword-params nested-params]
         [notification-agent.common]
+        [notification-agent.config]
         [notification-agent.delete]
         [notification-agent.job-status]
         [notification-agent.query])
   (:require [compojure.route :as route]
-            [compojure.handler :as handler]))
+            [compojure.handler :as handler]
+            [clojure.tools.logging :as log]
+            [clojure-commons.props :as cc-props]
+            [clojure-commons.clavin-client :as cl]
+            [ring.adapter.jetty :as jetty]))
 
 (defn- trap
   [f]
@@ -51,3 +57,21 @@
 
 (def app
   (site-handler notificationagent-routes))
+
+(defn -main
+  [& args]
+  (def zkprops (cc-props/parse-properties "notificationagent.properties"))
+  (def zkurl (get zkprops "zookeeper"))
+
+  (cl/with-zk
+    zkurl
+    (when (not (cl/can-run?))
+      (log/warn "THIS APPLICATION CANNOT RUN ON THIS MACHINE. SO SAYETH ZOOKEEPER.")
+      (log/warn "THIS APPLICATION WILL NOT EXECUTE CORRECTLY.")
+      (System/exit 1))
+
+    (reset! props (cl/properties "notificationagent")))
+
+  (log/warn @props)
+  (log/warn (str "Listening on " (listen-port)))
+  (jetty/run-jetty (site-handler notificationagent-routes) {:port (listen-port)}))

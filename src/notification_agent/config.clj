@@ -1,6 +1,6 @@
 (ns notification-agent.config
-  (:require [clojure-commons.props :as cc-props]
-            [clojure-commons.osm :as osm]))
+  (:use [clojure.string :only (split)])
+  (:require [clojure-commons.osm :as osm]))
 
 (def
   ^{:doc "The name of the properties file."}
@@ -8,40 +8,54 @@
 
 (def props
   ^{:doc "The properites that have been loaded from the properties file."}
-  (cc-props/load-properties-configuration prop-file))
+  (atom nil))
 
-(def osm-base
-  ^{:doc "The base URL used to connect to the OSM."}
-  (.getString props "iplantc.notificationagent.osm-base"))
+(defn osm-base
+  "The base URL used to connect to the OSM."
+  []
+  (get @props "notificationagent.osm-base"))
 
-(def osm-jobs-bucket
-  ^{:doc "The OSM bucket containing job status information."}
-  (.getString props "iplantc.notificationagent.osm-jobs-bucket"))
+(defn osm-jobs-bucket
+  "The OSM bucket containing job status information."
+  []
+  (get @props "notificationagent.osm-jobs-bucket"))
 
-(def osm-notifications-bucket
-  ^{:doc "Ths OSM bucket containing notifications."}
-  (.getString props "iplantc.notificationagent.osm-notifications-bucket"))
+(defn osm-notifications-bucket
+  "Ths OSM bucket containing notifications."
+  []
+  (get @props "notificationagent.osm-notifications-bucket"))
 
-(def email-enabled
-  ^{:doc "True if e-mail notifications are enabled."}
-  (.getString props "iplantc.notificationagent.enable-email"))
+(defn email-enabled
+  "True if e-mail notifications are enabled."
+  []
+  (get @props "notificationagent.enable-email"))
 
-(def email-url
-  ^{:doc "The URL used to connect to the mail service."}
-  (.getString props "iplantc.notificationagent.email-url"))
+(defn email-url
+  "The URL used to connect to the mail service."
+  []
+  (get @props "notificationagent.email-url"))
 
-(def email-template
-  ^{:doc "The template to use when sending e-mail notifications."}
-  (.getString props "iplantc.notificationagent.email-template"))
+(defn email-template
+  "The template to use when sending e-mail notifications."
+  []
+  (get @props "notificationagent.email-template"))
 
-(def notification-recipients
-  ^{:doc "The list of URLs to send notifications to."}
-  (seq (.getStringArray props "iplantc.notificationagent.recipients")))
+(defn notification-recipients
+  "The list of URLs to send notifications to."
+  []
+  (split (get @props "notificationagent.recipients") #","))
 
-(def jobs-osm
-  ^{:doc "The OSM client instance used to retrieve job status information."}
-  (osm/create osm-base osm-jobs-bucket))
+(defn listen-port
+  "The port to listen to for incoming connections."
+  []
+  (Integer/parseInt (get @props "notificationagent.listen-port")))
 
-(def notifications-osm
-  ^{:doc "The OSM client instance used to store and retrieve notifications."}
-  (osm/create osm-base osm-notifications-bucket))
+(defn jobs-osm
+  "The OSM client instance used to retrieve job status information."
+  []
+  (osm/create (osm-base) (osm-jobs-bucket)))
+
+(defn notifications-osm
+  "The OSM client instance used to store and retrieve notifications."
+  []
+  (osm/create (osm-base) (osm-notifications-bucket)))

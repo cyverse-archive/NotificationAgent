@@ -20,14 +20,14 @@
 (defn- query-osm
   "Queries the OSM for the messages that the caller wants to see."
   [query]
-  (let [result (osm/query notifications-osm (format-query query))
+  (let [result (osm/query (notifications-osm) (format-query query))
         obj (na-json/read-json result)]
     obj))
 
 (defn- update-seen-flag
   "Updates the seen flag in a notification message."
   [{id :object_persistence_uuid state :state}]
-  (osm/update-object notifications-osm id (assoc state :seen true)))
+  (osm/update-object (notifications-osm) id (assoc state :seen true)))
 
 (defn- get-message-timestamp
   "Extracts the timestamp from a notification message and converts it to an
