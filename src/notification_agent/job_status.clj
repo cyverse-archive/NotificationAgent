@@ -1,11 +1,12 @@
 (ns notification-agent.job-status
   (:use [clojure.string :only (lower-case)]
+        [clojure.pprint :only (pprint)]
         [notification-agent.config]
         [notification-agent.common]
+        [notification-agent.messages]
         [notification-agent.time])
   (:require [clojure.data.json :as json]
-	    [clojure-commons.json :as cc-json]
-            [clj-http.client :as client]
+	    [clj-http.client :as client]
             [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log])
   (:import [java.net URI]
@@ -120,9 +121,9 @@
   "Persists a message in the OSM and sends it to any receivers and returns
    the state object."
   [uuid state]
-  (let [msg (state-to-msg state)]
-    (persist-msg msg)
-    (send-msg (json/json-str msg)))
+  (let [msg (state-to-msg state)
+        uuid (persist-msg msg)]
+    (send-msg (json/json-str (reformat-message uuid msg))))
   state)
 
 (defn- handle-just-completed-job
@@ -151,7 +152,7 @@
 (defn handle-job-status
   "Handles a job status update request with the given body."
   [body]
-  (let [obj (cc-json/body->json body)
+  (let [obj (parse-body body)
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
     (if (job-status-changed state)

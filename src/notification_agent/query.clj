@@ -1,10 +1,10 @@
 (ns notification-agent.query
- (:use [clj-time.core]
+ (:use [notification-agent.common]
        [notification-agent.config]
+       [notification-agent.messages]
        [notification-agent.time]
        [clojure.pprint :only (pprint)])
  (:require [clojure.data.json :as json]
-           [clojure-commons.json :as cc-json]
            [clojure-commons.osm :as osm]
            [clojure.tools.logging :as log]
            [notification-agent.json :as na-json]))
@@ -21,22 +21,13 @@
   "Queries the OSM for the messages that the caller wants to see."
   [query]
   (let [result (osm/query notifications-osm (format-query query))
-        obj (time (na-json/read-json result))]
+        obj (na-json/read-json result)]
     obj))
 
 (defn- update-seen-flag
   "Updates the seen flag in a notification message."
   [{id :object_persistence_uuid state :state}]
   (osm/update-object notifications-osm id (assoc state :seen true)))
-
-(defn- reformat-message
-  "Converts a message from the format stored in the OSM to the format that the
-   DE expects."
-  [{:keys [state]}]
-  (-> state
-    (assoc-in [:message :timestamp] (timestamp->millis (get-in state [:message :timestamp])))
-    (assoc-in [:payload :startdate] (timestamp->millis (get-in state [:payload :startdate])))
-    (assoc-in [:payload :enddate] (timestamp->millis (get-in state [:payload :enddate])))))
 
 (defn- get-message-timestamp
   "Extracts the timestamp from a notification message and converts it to an
@@ -55,7 +46,7 @@
    will be returned."
   [limit results]
   (let [messages (sort-messages (:objects results))]
-    (map #(do (reformat-message %))
+    (map #(do (reformat-message (:object_persistence_uuid %) (:state %)))
       (if (and (number? limit) (> limit 0))
         (take-last limit messages)
         messages))))
@@ -83,11 +74,11 @@
    'limit' field is omitted then all messages that satisfy the other criteria
    will be returned."
   [body]
-  (get-messages* (cc-json/body->json body)))
+  (get-messages* (parse-body body)))
 
 (defn get-unseen-messages
   "Looks up messages in the OSM that have not been seen yet.  All other search
    criteria being the same, this function is equivalent to calling get-messages
    and specifying a 'seen' flag of 'false'."
   [body]
-  (get-messages* (assoc (cc-json/body->json body) :seen false)))
+  (get-messages* (assoc (parse-body body) :seen false)))
