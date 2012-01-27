@@ -27,7 +27,8 @@
 (defn- update-seen-flag
   "Updates the seen flag in a notification message."
   [{id :object_persistence_uuid state :state}]
-  (osm/update-object (notifications-osm) id (assoc state :seen true)))
+  (when (not (:seen state))
+    (osm/update-object (notifications-osm) id (assoc state :seen true))))
 
 (defn- get-message-timestamp
   "Extracts the timestamp from a notification message and converts it to an
@@ -46,7 +47,8 @@
    will be returned."
   [limit results]
   (let [messages (sort-messages (:objects results))]
-    (map #(do (reformat-message (:object_persistence_uuid %) (:state %)))
+    (map #(do (update-seen-flag %)
+            (reformat-message (:object_persistence_uuid %) (:state %)))
       (if (and (number? limit) (> limit 0))
         (take-last limit messages)
         messages))))

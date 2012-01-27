@@ -8,7 +8,8 @@
   (:require [clojure.data.json :as json]
 	    [clj-http.client :as client]
             [clojure-commons.osm :as osm]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [notification-agent.json :as na-json])
   (:import [java.net URI]
            [java.io IOException]))
 
@@ -42,6 +43,7 @@
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
   [request]
+  (log/warn (str "sending e-mail request: " request))
   (client/post (email-url)
                {:body (json/json-str request)
                 :content-type :json}))
@@ -66,12 +68,17 @@
   [state]
   (:notify state false))
 
+(defn- valid-email-addr
+  "Validates an e-mail address."
+  [addr]
+  (re-matches #"^[^@ ]+@[^@ ]+$" addr))
+
 (defn- send-email-if-requested
   "Sends an e-mail notifying the user of the job status change if e-mail
    notifications were requested."
   [state]
   (let [addr (:email state)]
-    (if (and (email-enabled) (email-requested state) (not (nil? addr)))
+    (if (and (email-enabled) (email-requested state) (valid-email-addr addr))
       (send-email-request (format-email-request addr state)))))
 
 (defn- state-to-msg
@@ -142,12 +149,45 @@
     (handle-just-completed-job uuid (add-completion-date state))
     (persist-and-send-msg uuid state)))
 
-(defn update-job-state
+(defn- update-job-state
   "Updates the job state in the OSM.  This is done so that the completion
    date can be added and the previous status can be updated."
   [uuid state]
   (osm/update-object (jobs-osm) uuid
     (assoc state :previous_status (:status state))))
+
+(defn- handle-status-change
+  "Handles a job with a status that has been changed since the job was last
+   seen by the notification agent.  To do this, a notification needs to be
+   generated and the prevous_status field has to be updated with the last
+   status that was seen by the notification agent."
+  [uuid state]
+  (update-job-state uuid (handle-updated-job-status uuid state)))
+
+(defn- get-jobs-with-inconsistent-state
+  "Gets a list of jobs whose current status doesn't match the status last seen
+   by the notification agent (which is stored in the misnamed previous_status
+   field)."
+  []
+  (let [query {"$where" "this.state.status != this.state.previous_status"}]
+    (:objects (na-json/read-json (osm/query (jobs-osm) query)))))
+
+(defn fix-job-status
+  "Fixes the status of a job with an inconsistent state.  This function is
+   basically just a wrapper around handle-status-change that adds some
+   exception handling."
+  [uuid state]
+  (try (handle-status-change uuid state)
+    (catch Throwable t
+      (log/warn t "unable to fix status for job " uuid))))
+
+(defn fix-inconsistent-state
+  "Processes the status changes for any jobs whose state changed without the
+   notification agent knowing about it.  This may happen if the system is
+   misconfigured or if the notification agent goes down for a while."
+  []
+  (dorun (map #(fix-job-status (:object_persistence_uuid %) (:state %))
+           (get-jobs-with-inconsistent-state))))
 
 (defn handle-job-status
   "Handles a job status update request with the given body."
@@ -155,6 +195,6 @@
   (let [obj (parse-body body)
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
-    (if (job-status-changed state)
-      (update-job-state uuid (handle-updated-job-status uuid state)))
+    (when (job-status-changed state)
+      (handle-status-change uuid state))
     (resp 200 nil)))

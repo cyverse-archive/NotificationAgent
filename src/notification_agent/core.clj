@@ -63,15 +63,19 @@
   (def zkprops (cc-props/parse-properties "notificationagent.properties"))
   (def zkurl (get zkprops "zookeeper"))
 
+  ;; Load the configuration from zookeeper.
   (cl/with-zk
     zkurl
     (when (not (cl/can-run?))
       (log/warn "THIS APPLICATION CANNOT RUN ON THIS MACHINE. SO SAYETH ZOOKEEPER.")
       (log/warn "THIS APPLICATION WILL NOT EXECUTE CORRECTLY.")
       (System/exit 1))
-
     (reset! props (cl/properties "notificationagent")))
 
+  ;; Process any job status changes that occurred when we weren't looking.
+  (fix-inconsistent-state)
+
+  ;; Start the server.
   (log/warn @props)
   (log/warn (str "Listening on " (listen-port)))
   (jetty/run-jetty (site-handler notificationagent-routes) {:port (listen-port)}))

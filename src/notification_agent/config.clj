@@ -1,6 +1,7 @@
 (ns notification-agent.config
   (:use [clojure.string :only (split)])
-  (:require [clojure-commons.osm :as osm]))
+  (:require [clojure-commons.osm :as osm]
+            [clojure.string :as string]))
 
 (def
   ^{:doc "The name of the properties file."}
@@ -43,7 +44,8 @@
 (defn notification-recipients
   "The list of URLs to send notifications to."
   []
-  (split (get @props "notificationagent.recipients") #","))
+  (filter #(not (string/blank? %))
+    (split (get @props "notificationagent.recipients") #",")))
 
 (defn listen-port
   "The port to listen to for incoming connections."
