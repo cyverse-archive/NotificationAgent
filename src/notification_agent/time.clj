@@ -1,7 +1,7 @@
 (ns notification-agent.time
  (:use [clj-time.core :only (default-time-zone now)]
-       [clj-time.format :only (formatter parse unparse)])
- (:require [clojure.string :as str]))
+       [clj-time.format :only (formatter parse unparse)]
+       [clojure.string :only (replace)]))
 
 (def date-formatter
   ^{:private true
@@ -16,7 +16,7 @@
 (defn- strip-zone-name
   "Strips the time zone name from a timestamp."
   [timestamp]
-  (str/replace timestamp #"\s*\([^\)]*\)$" ""))
+  (replace timestamp #"\s*\([^\)]*\)$" ""))
 
 (defn current-time
   "Returns the current time, formatted in a similar manner to the default
@@ -37,4 +37,4 @@
 (defn timestamp->millis
   "Converts a timestamp to the number of milliseconds since the epoch."
   [timestamp]
-  (if (str/blank? timestamp) "" (.getMillis (parse-timestamp timestamp))))
+  (.getMillis (parse-timestamp timestamp)))

@@ -13,9 +13,17 @@
 
 (defn resp
   "Returns a value that Ring can use to generate a response."
-  [status msg]
+  [status body]
   {:status status
-   :body msg})
+   :body body
+   :headers {"Content-Type" "text/plain"}})
+
+(defn json-resp
+  "Returns a value that Ring can use to generate a JSON response."
+  [status body]
+  {:status status
+   :body body
+   :headers {"Content-Type" "text/plain"}})
 
 (defn error-resp
   "Returns a value that Ring can use to generate a 400 response."
@@ -23,7 +31,7 @@
   (log/error e "bad request")
   {:status 400
    :body (str (.getMessage e) "\n")
-   :content-type "text/plain"})
+   :headers {"Content-Type" "text/plain"}})
 
 (defn failure-resp
   "Returns a value that Ring can use to generate a 500 response."
@@ -31,4 +39,4 @@
   (log/error e "internal error")
   {:status 500
    :body (str "Internal Error: " (.getMessage e) "\n")
-   :content-type "text/plain"})
+   :headers {"Content-Type" "text/plain"}})

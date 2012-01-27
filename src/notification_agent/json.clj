@@ -44,9 +44,9 @@
   (loop [token (.nextToken parser)
          result {}]
     (condp = token
-      field-name    (let [new-result (add-field result parser)]
-                      (recur (.nextToken parser) new-result))
-      end-object    result
+      field-name (let [new-result (add-field result parser)]
+                   (recur (.nextToken parser) new-result))
+      end-object result
       (unexpected-token-type token))))
 
 (defn- parse-array
@@ -67,8 +67,8 @@
   (condp = token
     value-false  false
     value-null   nil
-    value-float  (.getFloatValue parser)
-    value-int    (.getIntValue parser)
+    value-float  (.getText parser)
+    value-int    (.getText parser)
     value-string (.getText parser)
     value-true   true
     start-object (parse-object parser)

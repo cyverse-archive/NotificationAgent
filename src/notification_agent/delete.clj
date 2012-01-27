@@ -33,9 +33,9 @@
   "Handles a message deletion request.  The request body should consist of
    a JSON array of message UUIDs."
   [body]
-  (let [uuids (parse-body body)]
-    (if (vector? uuids)
+  (let [request (parse-body body)]
+    (if (and (map? request) (vector? (:uuids request)))
       (do
-        (delete-messages* uuids)
+        (delete-messages* (:uuids request))
         (resp 200 nil))
       (resp 400 "The request body must contain a list of identifiers.\n"))))

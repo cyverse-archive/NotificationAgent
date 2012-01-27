@@ -54,8 +54,8 @@
 (defn- get-messages*
   "Retrieves notification messages from the OSM."
   [query]
-  (json/json-str
-    {:messages (extract-messages (:limit query) (query-osm query))}))
+  (let [body {:messages (extract-messages (:limit query) (query-osm query))}]
+    (json-resp 200 (json/json-str body))))
 
 (defn get-messages
   "Looks up messages in the OSM that may or may not have been seen yet.  The
