@@ -43,7 +43,6 @@
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
   [request]
-  (log/warn (str "sending e-mail request: " request))
   (client/post (email-url)
                {:body (json/json-str request)
                 :content-type :json}))
