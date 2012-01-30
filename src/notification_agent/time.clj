@@ -8,7 +8,7 @@
 (def accepted-timestamp-formats
   ^{:private true
     :doc "The formats that we support for incoming timestamps"}
-  ["EEE MMM dd YYYY HH:mm:ss 'GMT'Z (z)" "YYYY MMM dd HH:mm:ss"])
+  ["EEE MMM dd YYYY HH:mm:ss 'GMT'Z" "YYYY MMM dd HH:mm:ss"])
 
 (defn multi-parser
   "Creates a formatter that can parse multiple date/time formats."
