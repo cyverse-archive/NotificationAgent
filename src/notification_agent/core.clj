@@ -72,8 +72,8 @@
       (System/exit 1))
     (reset! props (cl/properties "notificationagent")))
 
-  ;; Process any job status changes that occurred when we weren't looking.
-  (fix-inconsistent-state)
+  ;; Initialize the job-status service.
+  (initialize-job-status-service)
 
   ;; Start the server.
   (log/warn @props)

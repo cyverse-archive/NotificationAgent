@@ -10,7 +10,7 @@
     :doc "The formats that we support for incoming timestamps"}
   ["EEE MMM dd YYYY HH:mm:ss 'GMT'Z" "YYYY MMM dd HH:mm:ss"])
 
-(defn multi-parser
+(defn- multi-parser
   "Creates a formatter that can parse multiple date/time formats."
   [#^DateTimeZone dtz fmt & more]
   (let [parsers (map #(.getParser (formatter % dtz)) (cons fmt more))]

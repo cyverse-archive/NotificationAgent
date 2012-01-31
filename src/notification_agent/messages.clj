@@ -1,12 +1,6 @@
 (ns notification-agent.messages
  (:use [notification-agent.time]))
 
-(defn- replace-value
-  "Replaces a value defined by ks in a nested map, m, with the result of
-   calling f on the original value."
-  [m f ks]
-  (assoc-in m ks (f (get-in m ks))))
-
 (defn- fix-timestamp
   "Some timestamps are stored in the default timestamp format used by
    JavaScript.  The DE needs all timestamps to be represented as milliseconds
@@ -22,6 +16,17 @@
   [uuid state]
   (-> state
     (assoc-in [:message :id] uuid)
-    (replace-value fix-timestamp [:message :timestamp])
-    (replace-value fix-timestamp [:payload :startdate])
-    (replace-value fix-timestamp [:payload :enddate])))
+    (update-in [:message :timestamp] fix-timestamp)
+    (update-in [:payload :startdate] fix-timestamp)
+    (update-in [:payload :enddate] fix-timestamp)))
+
+(defn- get-message-timestamp
+  "Extracts the timestamp from a notification message and converts it to an
+   instance of java.util.Date."
+  [msg]
+  (parse-timestamp (:timestamp (:message (:state msg)))))
+
+(defn sort-messages
+  "Sorts messages in ascending order by message timestamp."
+  [messages]
+  (sort-by #(get-message-timestamp %) messages))

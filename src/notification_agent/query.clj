@@ -20,6 +20,7 @@
 (defn- query-osm
   "Queries the OSM for the messages that the caller wants to see."
   [query]
+  (log/debug "sending a query to the OSM: " query)
   (let [result (osm/query (notifications-osm) (format-query query))
         obj (na-json/read-json result)]
     obj))
@@ -27,25 +28,16 @@
 (defn- update-seen-flag
   "Updates the seen flag in a notification message."
   [{id :object_persistence_uuid state :state}]
+  (log/trace "updating the seen flag for message: " id)
   (when (not (:seen state))
     (osm/update-object (notifications-osm) id (assoc state :seen true))))
-
-(defn- get-message-timestamp
-  "Extracts the timestamp from a notification message and converts it to an
-   instance of java.util.Date."
-  [msg]
-  (parse-timestamp (:timestamp (:message (:state msg)))))
-
-(defn- sort-messages
-  "Sorts messages by message timestamp."
-  [messages]
-  (sort-by #(get-message-timestamp %) messages))
 
 (defn- extract-messages
   "Extracts at most limit notification messages from objects returned by the
    OSM.  If limit is nil or nonpositive then all of the notification messages
    will be returned."
   [limit results]
+  (log/debug "extracting messages from " results)
   (let [messages (sort-messages (:objects results))]
     (map #(do (update-seen-flag %)
             (reformat-message (:object_persistence_uuid %) (:state %)))
@@ -76,11 +68,15 @@
    'limit' field is omitted then all messages that satisfy the other criteria
    will be returned."
   [body]
-  (get-messages* (parse-body body)))
+  (let [query (parse-body body)]
+    (log/debug "handling a query for general messages: " query)
+    (get-messages* query)))
 
 (defn get-unseen-messages
   "Looks up messages in the OSM that have not been seen yet.  All other search
    criteria being the same, this function is equivalent to calling get-messages
    and specifying a 'seen' flag of 'false'."
   [body]
-  (get-messages* (assoc (parse-body body) :seen false)))
+  (let [query (parse-body body)]
+    (log/debug "handling a query for unseen messages: " query)
+    (get-messages* (assoc query :seen false))))

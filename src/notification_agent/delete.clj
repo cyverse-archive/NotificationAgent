@@ -13,11 +13,13 @@
 (defn- get-msg
   "Retrieves the message identified by uuid from the OSM."
   [uuid]
+  (log/trace "retrieving message " uuid " from the OSM")
   (first (osm/query (notifications-osm) {:object_persistence_uuid uuid})))
 
 (defn- delete-message
   "Marks a single message as deleted."
   [uuid]
+  (log/debug "marking message " uuid " as deleted")
   (let [msg (get-msg uuid)]
     (if (nil? msg)
       (log-missing-message uuid)
@@ -33,6 +35,7 @@
   "Handles a message deletion request.  The request body should consist of
    a JSON array of message UUIDs."
   [body]
+  (log/debug "handling a notification message deletion request")
   (let [request (parse-body body)]
     (if (and (map? request) (vector? (:uuids request)))
       (do
