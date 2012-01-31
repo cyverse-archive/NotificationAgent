@@ -155,6 +155,8 @@
    Eventually, the storage of the completion date is going to be moved to
    Panopticon.  This function will be removed at that time."
   [uuid state]
+  (log/info "persisting the completion date for job" (:uuid state)
+    "with status" (:status state))
   (let [completion-date (:completion_date state)
         new-state (load-state uuid)]
     (osm/update-object (jobs-osm) uuid
@@ -248,7 +250,8 @@
   (let [obj (parse-body body)
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
-    (log/debug "handling a job status update request: " obj)
+    (log/info "received a job status update request for job" (:uuid state)
+      "with status" (:status state))
     (if (job-status-changed state)
       (handle-status-change uuid state)
       (log/debug "the status of job " (:name state) " did not change"))
