@@ -2,7 +2,8 @@
  (:use [notification-agent.common]
        [notification-agent.config])
  (:require [clojure.tools.logging :as log]
-           [clojure-commons.osm :as osm]))
+           [clojure-commons.osm :as osm]
+           [notification-agent.json :as na-json]))
 
 (defn- log-missing-message
   "Logs a message indicating that an attempt was made to delete a non-existent
@@ -14,7 +15,8 @@
   "Retrieves the message identified by uuid from the OSM."
   [uuid]
   (log/trace "retrieving message " uuid " from the OSM")
-  (first (osm/query (notifications-osm) {:object_persistence_uuid uuid})))
+  (let [body (osm/query (notifications-osm) {:object-persistence-uuid uuid})]
+    (first (:objects (na-json/read-json body)))))
 
 (defn- delete-message
   "Marks a single message as deleted."

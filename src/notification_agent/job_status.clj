@@ -13,11 +13,6 @@
   (:import [java.net URI]
            [java.io IOException]))
 
-(def job-statuses
-  ^{:private true
-    :doc "the statuses of jobs that we're currently processing"}
-  (ref {}))
-
 (defn- extract-path
   "Extracts the path component from a URI."
   [addr]
@@ -215,7 +210,9 @@
 (defn- get-notification-status
   "Gets the status of the most recent notification associated with a job."
   [uuid]
-  (get @job-statuses uuid ""))
+  (let [results (osm/query (job-status-osm) {"state.uuid" uuid})
+        objects (:objects (na-json/read-json results))]
+    (if (empty? objects) "" (get-in (first objects) [:state :status]))))
 
 (defn- job-status-changed
   "Determines whether or not the status of a job corresponding to a state
@@ -225,23 +222,49 @@
     (let [curr-status (:status state)
           uuid (:uuid state)
           prev-status (get-notification-status uuid)]
-      (if (= curr-status prev-status)
-        false
-        (do (alter job-statuses assoc uuid curr-status) true)))))
+      (= curr-status prev-status))))
 
-(defn- load-notification-statuses
-  "Loads the most recent status that appeared in a notification for every job.
-   This is going to require some optimization, but it should work for now."
+(defn- job-status-bucket-empty
+  "Determines whether or not the job status bucket is empty."
   []
-  (apply hash-map
-    (flatten
-      (map #(select-keys % :id :status)
-        (sort-messages (:objects (osm/query (notifications-osm) {})))))))
+  (let [results (osm/query (job-status-osm) {})]
+    (empty? (:objects (na-json/read-json results)))))
+
+(defn- get-all-notifications
+  "Retrieves all notifications from the OSM."
+  []
+  (:objects (na-json/read-json (osm/query (notifications-osm) {}))))
+
+(defn get-values
+  "Gets multiple values from a map."
+  [m k & more]
+  (map #(get m %) (cons k more)))
+
+(defn- load-all-notifications
+  "Loads all of the notifications that have ever been logged, filtering out
+   any that appear to be invalid."
+  []
+  (filter #(not (nil? (get-in % [:state :message :timestamp])))
+          (:objects (na-json/read-json (osm/query (notifications-osm) {})))))
+
+(defn load-job-statuses
+  "Loads the most recent status seen by the notification agent for all jobs."
+  []
+  (apply merge
+         (map #(hash-map (get-values (get-in % [:state :payload]) :id :status))
+              (notification-agent.messages/sort-messages
+                (load-all-notifications)))))
+
+(defn- initialize-job-status-bucket
+  "Initializes the job status bucket in the OSM."
+  []
+  (log/info "initializing the job status bucket in the OSM")
+  ())
 
 (defn initialize-job-status-service
   "Performs any tasks required to initialize the job status service."
   []
-  (dosync (ref-set job-statuses (load-notification-statuses)))
+  (when (job-status-bucket-empty) (initialize-job-status-bucket))
   (fix-inconsistent-state))
 
 (defn handle-job-status

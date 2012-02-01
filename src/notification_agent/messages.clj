@@ -1,5 +1,6 @@
 (ns notification-agent.messages
- (:use [notification-agent.time]))
+ (:use [notification-agent.time])
+ (:require [clojure.tools.logging :as log]))
 
 (defn- fix-timestamp
   "Some timestamps are stored in the default timestamp format used by
@@ -24,7 +25,8 @@
   "Extracts the timestamp from a notification message and converts it to an
    instance of java.util.Date."
   [msg]
-  (parse-timestamp (:timestamp (:message (:state msg)))))
+  (let [timestamp (parse-timestamp (get-in msg [:state :message :timestamp]))]
+    (log/warn "timestamp:" timestamp)))
 
 (defn sort-messages
   "Sorts messages in ascending order by message timestamp."

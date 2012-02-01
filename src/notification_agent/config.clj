@@ -22,9 +22,15 @@
   (get @props "notificationagent.osm-jobs-bucket"))
 
 (defn osm-notifications-bucket
-  "Ths OSM bucket containing notifications."
+  "The OSM bucket containing notifications."
   []
   (get @props "notificationagent.osm-notifications-bucket"))
+
+(defn osm-job-status-bucket
+  "The OSM bucket used to store the last status seen by the notification agent
+   for each job."
+  []
+  (get @props "notificationagent.osm-job-status-bucket"))
 
 (defn email-enabled
   "True if e-mail notifications are enabled."
@@ -61,3 +67,9 @@
   "The OSM client instance used to store and retrieve notifications."
   []
   (osm/create (osm-base) (osm-notifications-bucket)))
+
+(defn job-status-osm
+  "The OSM client instance used to store the most recent status seen by the
+   notification agent for each job."
+  []
+  (osm/create (osm-base) (osm-job-status-bucket)))
