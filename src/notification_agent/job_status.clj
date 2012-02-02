@@ -151,11 +151,11 @@
    Panopticon.  This function will be removed at that time."
   [uuid state]
   (log/info "persisting the completion date for job" (:uuid state)
-    "with status" (:status state))
+            "with status" (:status state))
   (let [completion-date (:completion_date state)
         new-state (load-state uuid)]
     (osm/update-object (jobs-osm) uuid
-      (assoc new-state :completion_date completion-date))))
+                       (assoc new-state :completion_date completion-date))))
 
 (defn- handle-just-completed-job
   "Handles a job status update request for a job that has just completed
@@ -165,6 +165,30 @@
   (send-email-if-requested state)
   (persist-and-send-msg uuid state)
   (persist-completion-date uuid state))
+
+(defn- get-notification-status-object
+  "Loads the notification status object for the job with the given UUID."
+  [uuid]
+  (let [query {"state.uuid" uuid}
+        results (na-json/read-json (osm/query (job-status-osm) query))]
+    (first (:objects results))))
+
+(defn- get-notification-status
+  "Gets the status of the most recent notification associated with a job."
+  [uuid]
+  (let [obj (get-notification-status-object uuid)]
+    (if (nil? obj) "" (get-in obj [:state :status]))))
+
+(defn- update-notification-status
+  "Stores the last status seen by the notification agent for a job in the job
+   statuses bucket in the OSM."
+  [{:keys [:uuid :status]}]
+  (let [status-obj (get-notification-status-object)
+        new-state {:id uuid :status status}]
+    (if (nil? status-obj)
+      (osm/save-object (job-status-osm) new-state)
+      (osm/update-object
+        (job-status-osm {:object_persistence_uuid obj} new-state)))))
 
 (defn- handle-status-change
   "Handles a job with a status that has been changed since the job was last
@@ -177,7 +201,17 @@
         new-state (if just-completed (add-completion-date state) state)]
     (if just-completed
       (handle-just-completed-job uuid new-state)
-      (persist-and-send-msg uuid new-state))))
+      (persist-and-send-msg uuid new-state))
+    (update-notification-status state)))
+
+(defn- job-status-changed
+  "Determines whether or not the status of a job corresponding to a state
+   object has changed since the last time the notification agent saw the job."
+  [state]
+  (let [curr-status (:status state)
+        uuid (:uuid state)
+        prev-status (get-notification-status uuid)]
+    (= curr-status prev-status)))
 
 (defn- get-jobs-with-inconsistent-state
   "Gets a list of jobs whose current status doesn't match the status last seen
@@ -185,9 +219,9 @@
    field)."
   []
   (log/debug "retrieving the list of jobs that have been updated while the "
-    "notification agent was down")
-  (let [query {"$where" "this.state.status != this.state.previous_status"}]
-    (:objects (na-json/read-json (osm/query (jobs-osm) query)))))
+             "notification agent was down")
+  (let [jobs (:objects (na-json/read-json (osm/query (jobs-osm) {})))]
+    (filter #(job-status-changed (:state %)) jobs)))
 
 (defn- fix-job-status
   "Fixes the status of a job with an inconsistent state.  This function is
@@ -205,24 +239,7 @@
    misconfigured or if the notification agent goes down for a while."
   []
   (dorun (map #(fix-job-status (:object_persistence_uuid %) (:state %))
-           (get-jobs-with-inconsistent-state))))
-
-(defn- get-notification-status
-  "Gets the status of the most recent notification associated with a job."
-  [uuid]
-  (let [results (osm/query (job-status-osm) {"state.uuid" uuid})
-        objects (:objects (na-json/read-json results))]
-    (if (empty? objects) "" (get-in (first objects) [:state :status]))))
-
-(defn- job-status-changed
-  "Determines whether or not the status of a job corresponding to a state
-   object has changed since the last time the notification agent saw the job."
-  [state]
-  (dosync
-    (let [curr-status (:status state)
-          uuid (:uuid state)
-          prev-status (get-notification-status uuid)]
-      (= curr-status prev-status))))
+              (get-jobs-with-inconsistent-state))))
 
 (defn- job-status-bucket-empty
   "Determines whether or not the job status bucket is empty."
@@ -247,11 +264,16 @@
   (filter #(not (nil? (get-in % [:state :message :timestamp])))
           (:objects (na-json/read-json (osm/query (notifications-osm) {})))))
 
+(defn- get-payload
+  "Extracts the payload from a notificaiton object in the OSM."
+  [obj]
+  (get-in obj [:state :payload]))
+
 (defn load-job-statuses
   "Loads the most recent status seen by the notification agent for all jobs."
   []
   (apply merge
-         (map #(hash-map (get-values (get-in % [:state :payload]) :id :status))
+         (map #(apply hash-map (get-values (get-payload %) :id :status))
               (notification-agent.messages/sort-messages
                 (load-all-notifications)))))
 
@@ -259,7 +281,8 @@
   "Initializes the job status bucket in the OSM."
   []
   (log/info "initializing the job status bucket in the OSM")
-  ())
+  (dorun (map #(osm/save-object (job-status-osm) {:id (key %) :status (val %)})
+              (load-job-statuses))))
 
 (defn initialize-job-status-service
   "Performs any tasks required to initialize the job status service."
@@ -274,7 +297,7 @@
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
     (log/info "received a job status update request for job" (:uuid state)
-      "with status" (:status state))
+              "with status" (:status state))
     (if (job-status-changed state)
       (handle-status-change uuid state)
       (log/debug "the status of job " (:name state) " did not change"))
