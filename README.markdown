@@ -211,6 +211,7 @@ file:
 notificationagent.osm-base=http://by-tor:65535
 notificationagent.osm-jobs-bucket=jobs
 notificationagent.osm-notifications-bucket=notifications
+notificationagent.osm-job-status-bucket=notificationagent_job_status
 
 # E-mail configuration settings.
 notificationagent.email-url=http://snow-dog:65534
@@ -225,7 +226,8 @@ The OSM configuration settings tell the notification agent how to connect to
 the OSM and which buckets to use.  The base URL is fairly self-explanatory.
 The jobs bucket is the OSM bucket where the job status information is stored.
 Similarly, the notifications bucket is the OSM bucket where the notifications
-are stored.
+are stored.  The job status bucket is where the notification agent stores the
+most recent status it has seen for each job.
 
 The e-mail configuration settings are all fairly self-explanatory except for
 the template, which is the name of the template that the e-mail service uses
