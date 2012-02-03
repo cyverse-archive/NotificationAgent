@@ -9,19 +9,19 @@
   "Logs a message indicating that an attempt was made to delete a non-existent
    message."
   [uuid]
-  (log/warn (str "attempt to delete non-existent message " uuid " ignored")))
+  (log/warn "attempt to delete non-existent message" uuid "ignored"))
 
 (defn- get-msg
   "Retrieves the message identified by uuid from the OSM."
   [uuid]
-  (log/trace "retrieving message " uuid " from the OSM")
-  (let [body (osm/query (notifications-osm) {:object-persistence-uuid uuid})]
+  (log/trace "retrieving message" uuid "from the OSM")
+  (let [body (osm/query (notifications-osm) {:object_persistence_uuid uuid})]
     (first (:objects (na-json/read-json body)))))
 
 (defn- delete-message
   "Marks a single message as deleted."
   [uuid]
-  (log/debug "marking message " uuid " as deleted")
+  (log/debug "marking message" uuid "as deleted")
   (let [msg (get-msg uuid)]
     (if (nil? msg)
       (log-missing-message uuid)

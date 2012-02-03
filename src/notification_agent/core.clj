@@ -77,5 +77,5 @@
 
   ;; Start the server.
   (log/warn @props)
-  (log/warn (str "Listening on " (listen-port)))
+  (log/warn "Listening on" (listen-port))
   (jetty/run-jetty (site-handler notificationagent-routes) {:port (listen-port)}))

@@ -14,7 +14,7 @@
 (defn resp
   "Returns a value that Ring can use to generate a response."
   [status body]
-  (log/debug (str "response: " body))
+  (log/debug (str "response:" body))
   {:status status
    :body body
    :headers {"Content-Type" "text/plain"}})
@@ -22,7 +22,7 @@
 (defn json-resp
   "Returns a value that Ring can use to generate a JSON response."
   [status body]
-  (log/debug (str "response: " body))
+  (log/debug (str "response:" body))
   {:status status
    :body body
    :headers {"Content-Type" "text/plain"}})

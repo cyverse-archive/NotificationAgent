@@ -25,8 +25,7 @@
   "Extracts the timestamp from a notification message and converts it to an
    instance of java.util.Date."
   [msg]
-  (let [timestamp (parse-timestamp (get-in msg [:state :message :timestamp]))]
-    (log/warn "timestamp:" timestamp)))
+  (parse-timestamp (get-in msg [:state :message :timestamp])))
 
 (defn sort-messages
   "Sorts messages in ascending order by message timestamp."

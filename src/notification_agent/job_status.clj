@@ -36,13 +36,13 @@
 (defn- add-completion-date
   "Adds the completion date to a job state object."
   [state]
-  (log/trace "adding a completion date to job " (:name state))
+  (log/trace "adding a completion date to job" (:name state))
   (assoc state :completion_date (current-time)))
 
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
   [request]
-  (log/debug "sending an e-mail request: " request)
+  (log/debug "sending an e-mail request:" request)
   (client/post (email-url)
                {:body (json/json-str request)
                 :content-type :json}))
@@ -108,23 +108,23 @@
 (defn- persist-msg
   "Persists a message in the OSM."
   [msg]
-  (log/debug "saving a message in the OSM: " msg)
+  (log/debug "saving a message in the OSM:" msg)
   (osm/save-object (notifications-osm) msg))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."
   [url msg]
-  (log/debug "sending message to " url)
+  (log/debug "sending message to" url)
   (try
     (client/post url {:body msg})
     (catch IOException e
-      (log/error (str "unable to send message to " url ": " e)))))
+      (log/error e "unable to send message to" url))))
 
 (defn- send-msg
   "Forwards a message to zero or more recipients."
   [msg]
   (let [recipients (notification-recipients)]
-    (log/debug "forwarding message to " (count recipients) " recipients")
+    (log/debug "forwarding message to" (count recipients) "recipients")
     (doall (map #(send-msg-to-recipient % msg) recipients))))
 
 (defn- persist-and-send-msg
@@ -133,7 +133,7 @@
   [uuid state]
   (let [msg (state-to-msg state)
         uuid (persist-msg msg)]
-    (log/debug "UUID of persisted message: " uuid)
+    (log/debug "UUID of persisted message:" uuid)
     (send-msg (json/json-str (reformat-message uuid msg)))))
 
 (defn- load-state
@@ -161,7 +161,7 @@
   "Handles a job status update request for a job that has just completed
    and returns the state object."
   [uuid state]
-  (log/debug "job " (:name state) " just completed")
+  (log/debug "job" (:name state) "just completed")
   (send-email-if-requested state)
   (persist-and-send-msg uuid state)
   (persist-completion-date uuid state))
@@ -169,7 +169,7 @@
 (defn- get-notification-status-object
   "Loads the notification status object for the job with the given UUID."
   [uuid]
-  (let [query {"state.uuid" uuid}
+  (let [query {"state.id" uuid}
         results (na-json/read-json (osm/query (job-status-osm) query))]
     (first (:objects results))))
 
@@ -182,13 +182,14 @@
 (defn- update-notification-status
   "Stores the last status seen by the notification agent for a job in the job
    statuses bucket in the OSM."
-  [{:keys [:uuid :status]}]
-  (let [status-obj (get-notification-status-object)
+  [{uuid :uuid status :status job-name :name}]
+  (let [status-obj (get-notification-status-object uuid)
         new-state {:id uuid :status status}]
+    (log/info "updating the notification status for job" job-name)
     (if (nil? status-obj)
       (osm/save-object (job-status-osm) new-state)
       (osm/update-object
-        (job-status-osm {:object_persistence_uuid obj} new-state)))))
+        (job-status-osm) (:object_persistence_uuid status-obj) new-state))))
 
 (defn- handle-status-change
   "Handles a job with a status that has been changed since the job was last
@@ -196,7 +197,7 @@
    generated and the prevous_status field has to be updated with the last
    status that was seen by the notification agent."
   [uuid state]
-  (log/debug "the status of job " (:name state) " changed")
+  (log/debug "the status of job" (:name state) "changed")
   (let [just-completed (job-just-completed state)
         new-state (if just-completed (add-completion-date state) state)]
     (if just-completed
@@ -211,7 +212,7 @@
   (let [curr-status (:status state)
         uuid (:uuid state)
         prev-status (get-notification-status uuid)]
-    (= curr-status prev-status)))
+    (not= curr-status prev-status)))
 
 (defn- get-jobs-with-inconsistent-state
   "Gets a list of jobs whose current status doesn't match the status last seen
@@ -228,10 +229,10 @@
    basically just a wrapper around handle-status-change that adds some
    exception handling."
   [uuid state]
-  (log/debug "fixing state for job " (:name state))
+  (log/debug "fixing state for job" (:name state))
   (try (handle-status-change uuid state)
     (catch Throwable t
-      (log/warn t "unable to fix status for job " (:name state)))))
+      (log/warn t "unable to fix status for job" (:name state)))))
 
 (defn- fix-inconsistent-state
   "Processes the status changes for any jobs whose state changed without the
@@ -287,8 +288,12 @@
 (defn initialize-job-status-service
   "Performs any tasks required to initialize the job status service."
   []
-  (when (job-status-bucket-empty) (initialize-job-status-bucket))
-  (fix-inconsistent-state))
+  (try
+    (do 
+      (when (job-status-bucket-empty) (initialize-job-status-bucket))
+      (fix-inconsistent-state))
+    (catch Exception e
+      (log/error e "unable to initialize job status service"))))
 
 (defn handle-job-status
   "Handles a job status update request with the given body."
@@ -296,9 +301,9 @@
   (let [obj (parse-body body)
         state (:state obj)
         uuid (:object_persistence_uuid obj)]
-    (log/info "received a job status update request for job" (:uuid state)
+    (log/info "received a job status update request for job" (:name state)
               "with status" (:status state))
     (if (job-status-changed state)
       (handle-status-change uuid state)
-      (log/debug "the status of job " (:name state) " did not change"))
+      (log/debug "the status of job" (:name state) "did not change"))
     (resp 200 nil)))

@@ -20,7 +20,7 @@
 (defn- query-osm
   "Queries the OSM for the messages that the caller wants to see."
   [query]
-  (log/debug "sending a query to the OSM: " query)
+  (log/debug "sending a query to the OSM:" query)
   (let [result (osm/query (notifications-osm) (format-query query))
         obj (na-json/read-json result)]
     obj))
@@ -28,7 +28,7 @@
 (defn- update-seen-flag
   "Updates the seen flag in a notification message."
   [{id :object_persistence_uuid state :state}]
-  (log/trace "updating the seen flag for message: " id)
+  (log/trace "updating the seen flag for message:" id)
   (when (not (:seen state))
     (osm/update-object (notifications-osm) id (assoc state :seen true))))
 
@@ -37,7 +37,7 @@
    OSM.  If limit is nil or nonpositive then all of the notification messages
    will be returned."
   [limit results]
-  (log/debug "extracting messages from " results)
+  (log/debug "extracting messages from" results)
   (let [messages (sort-messages (:objects results))]
     (map #(do (update-seen-flag %)
             (reformat-message (:object_persistence_uuid %) (:state %)))
@@ -69,7 +69,7 @@
    will be returned."
   [body]
   (let [query (parse-body body)]
-    (log/debug "handling a query for general messages: " query)
+    (log/debug "handling a query for general messages:" query)
     (get-messages* query)))
 
 (defn get-unseen-messages
@@ -78,5 +78,5 @@
    and specifying a 'seen' flag of 'false'."
   [body]
   (let [query (parse-body body)]
-    (log/debug "handling a query for unseen messages: " query)
+    (log/debug "handling a query for unseen messages:" query)
     (get-messages* (assoc query :seen false))))
