@@ -60,7 +60,7 @@
 
 (defn -main
   [& args]
-  (def zkprops (cc-props/parse-properties "notificationagent.properties"))
+  (def zkprops (cc-props/parse-properties "zkhosts.properties"))
   (def zkurl (get zkprops "zookeeper"))
 
   ;; Load the configuration from zookeeper.
