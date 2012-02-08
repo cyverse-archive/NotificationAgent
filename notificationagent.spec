@@ -62,6 +62,7 @@ fi
 %clean
 lein clean
 rm -r lib/*
+rm -r $RPM_BUILD_ROOT
 
 %files
 %attr(-,iplant,iplant) /usr/local/lib/notificationagent/
@@ -71,7 +72,6 @@ rm -r lib/*
 %attr(-,iplant,iplant) /etc/notificationagent/
 
 %config %attr(0644,iplant,iplant) /etc/notificationagent/log4j.properties
-%config %attr(0644,iplant,iplant) /etc/notificationagent/notificationagent.properties
 
 %attr(0755,root,root) /etc/init.d/notificationagent
 %attr(0644,iplant,iplant) /usr/local/lib/notificationagent/notificationagent-1.0.0-SNAPSHOT-standalone.jar
