@@ -43,7 +43,6 @@ install -d $RPM_BUILD_ROOT/etc/notificationagent/
 install notificationagent $RPM_BUILD_ROOT/etc/init.d/
 install notificationagent-1.0.0-SNAPSHOT-standalone.jar $RPM_BUILD_ROOT/usr/local/lib/notificationagent/
 install conf/log4j.properties $RPM_BUILD_ROOT/etc/notificationagent/
-install conf/notificationagent.properties $RPM_BUILD_ROOT/etc/notificationagent/
 
 %post
 /sbin/chkconfig --add notificationagent
