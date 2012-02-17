@@ -83,7 +83,7 @@
 (defn- state-to-msg
   "Converts an object representing a job state to a notification message."
   [state]
-  {:type "analysis"
+  {:type (:type state)
    :user (:user state)
    :deleted false
    :seen false
