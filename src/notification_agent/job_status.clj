@@ -21,7 +21,7 @@
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
   [state]
-  (str "job " (:name state) " " (lower-case (:status state))))
+  (str (:name state) " " (lower-case (:status state))))
 
 (defn- job-completed
   "Determines if a job has completed."
