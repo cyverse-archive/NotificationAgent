@@ -10,13 +10,7 @@
             [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log]
             [notification-agent.json :as na-json])
-  (:import [java.net URI]
-           [java.io IOException]))
-
-(defn- extract-path
-  "Extracts the path component from a URI."
-  [addr]
-  (.getPath (URI. addr)))
+  (:import [java.io IOException]))
 
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
@@ -56,7 +50,7 @@
    :values {:analysisname (:name state)
             :analysisstatus (:status state)
             :analysisstartdate (:submission_date state)
-            :analysisresultsfolder (extract-path (:output_dir state))
+            :analysisresultsfolder (:output_dir state)
             :analysisdescription (:description state)}})
 
 (defn- email-requested
@@ -70,7 +64,7 @@
 (defn- valid-email-addr
   "Validates an e-mail address."
   [addr]
-  (re-matches #"^[^@ ]+@[^@ ]+$" addr))
+  (and (not (nil? addr)) (re-matches #"^[^@ ]+@[^@ ]+$" addr)))
 
 (defn- send-email-if-requested
   "Sends an e-mail notifying the user of the job status change if e-mail
@@ -96,7 +90,7 @@
    :payload {:id (:uuid state)
              :action "job_status_change"
              :status (:status state)
-             :resultfolderid (extract-path (:output_dir state))
+             :resultfolderid (:output_dir state)
              :user (:user state)
              :name (:name state "")
              :startdate (:submission_date state "")
@@ -229,10 +223,11 @@
    basically just a wrapper around handle-status-change that adds some
    exception handling."
   [uuid state]
-  (log/debug "fixing state for job" (:name state))
-  (try (handle-status-change uuid state)
-    (catch Throwable t
-      (log/warn t "unable to fix status for job" (:name state)))))
+  (when (not (nil? (:name state)))
+    (log/debug "fixing state for job" (:name state))
+    (try (handle-status-change uuid state)
+      (catch Throwable t
+        (log/warn t "unable to fix status for job" (:name state))))))
 
 (defn- fix-inconsistent-state
   "Processes the status changes for any jobs whose state changed without the
