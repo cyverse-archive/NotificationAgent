@@ -14,7 +14,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 License: BSD
 Provides: notificationagent
 Requires: iplant-service-config >= 0.1.0-4
-Conflicts: iplant-service-config <= 0.1.0-3
 Source0: %{name}-%{version}.tar.gz
 
 %description
