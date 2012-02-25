@@ -22,17 +22,6 @@
   [state]
   (re-matches #"(?i)\s*(?:completed|failed)\s*" (:status state)))
 
-(defn- job-just-completed
-  "Determines if a job has just completed."
-  [state]
-  (and (nil? (:completion_date state)) (job-completed state)))
-
-(defn- add-completion-date
-  "Adds the completion date to a job state object."
-  [state]
-  (log/trace "adding a completion date to job" (:name state))
-  (assoc state :completion_date (current-time)))
-
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
   [request]
@@ -130,35 +119,13 @@
     (log/debug "UUID of persisted message:" uuid)
     (send-msg (json/json-str (reformat-message uuid msg)))))
 
-(defn- load-state
-  "Loads the current state of the object from the OSM."
-  [uuid]
-  (:state (na-json/read-json (osm/get-object (jobs-osm) uuid))))
-
-(defn- persist-completion-date
-  "Stores the job completion date in the OSM.  This is done by loading the
-   current state from the OSM, updating the completion date in the loaded
-   state object and storing the updated object in the OSM.  This reduces,
-   albeit does not eliminate the possibility that the state will have been
-   updated between the time we got the state and the time we updated it.
-   Eventually, the storage of the completion date is going to be moved to
-   Panopticon.  This function will be removed at that time."
-  [uuid state]
-  (log/info "persisting the completion date for job" (:uuid state)
-            "with status" (:status state))
-  (let [completion-date (:completion_date state)
-        new-state (load-state uuid)]
-    (osm/update-object (jobs-osm) uuid
-                       (assoc new-state :completion_date completion-date))))
-
-(defn- handle-just-completed-job
-  "Handles a job status update request for a job that has just completed
-   and returns the state object."
+(defn- handle-completed-job
+  "Handles a job status update request for a job that has completed and
+   returns the state object."
   [uuid state]
   (log/debug "job" (:name state) "just completed")
   (send-email-if-requested state)
-  (persist-and-send-msg uuid state)
-  (persist-completion-date uuid state))
+  (persist-and-send-msg uuid state))
 
 (defn- get-notification-status-object
   "Loads the notification status object for the job with the given UUID."
@@ -192,11 +159,10 @@
    status that was seen by the notification agent."
   [uuid state]
   (log/debug "the status of job" (:name state) "changed")
-  (let [just-completed (job-just-completed state)
-        new-state (if just-completed (add-completion-date state) state)]
-    (if just-completed
-      (handle-just-completed-job uuid new-state)
-      (persist-and-send-msg uuid new-state))
+  (let [completed (job-completed state)]
+    (if completed
+      (handle-completed-job uuid state)
+      (persist-and-send-msg uuid state))
     (update-notification-status state)))
 
 (defn- job-status-changed
@@ -242,11 +208,6 @@
   []
   (let [results (osm/query (job-status-osm) {})]
     (empty? (:objects (na-json/read-json results)))))
-
-(defn- get-all-notifications
-  "Retrieves all notifications from the OSM."
-  []
-  (:objects (na-json/read-json (osm/query (notifications-osm) {}))))
 
 (defn get-values
   "Gets multiple values from a map."
