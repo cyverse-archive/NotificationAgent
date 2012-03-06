@@ -38,7 +38,7 @@
    :subject (str (:name state) " status changed.")
    :values {:analysisname (:name state)
             :analysisstatus (:status state)
-            :analysisstartdate (:submission_date state)
+            :analysisstartdate (unparse-epoch-string (:submission_date state))
             :analysisresultsfolder (:output_dir state)
             :analysisdescription (:description state)}})
 

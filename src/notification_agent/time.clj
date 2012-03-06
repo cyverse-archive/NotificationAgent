@@ -39,6 +39,13 @@
   []
   (unparse date-formatter (now)))
 
+(defn unparse-epoch-string
+  "Parses a long containing the seconds since the epoch.
+   Returns a string containing a formatted date."
+  [epoch-long]
+  (let [epoch-dt (org.joda.time.DateTime. epoch-long)]
+    (unparse date-formatter epoch-dt)))
+
 (defn parse-timestamp
   "Parses a timestamp that is in a format similar to the default date and time
    format used by JavaScript.  According to the Joda Time API documentation,
