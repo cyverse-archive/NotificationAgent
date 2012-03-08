@@ -11,7 +11,8 @@
                  [ring/ring-jetty-adapter "1.0.1"]
                  [org.codehaus.jackson/jackson-core-asl "1.9.3"]]
   :dev-dependencies [[lein-ring "0.4.5"]
-                     [swank-clojure "1.2.1"]]
+                     [swank-clojure "1.2.1"]
+                     [lein-marginalia "0.7.0"]]
   :ring {:handler notification-agent.core/app}
   :aot [notification-agent.core]
   :main notification-agent.core
