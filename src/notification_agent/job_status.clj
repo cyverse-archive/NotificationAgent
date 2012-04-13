@@ -12,10 +12,20 @@
             [notification-agent.json :as na-json])
   (:import [java.io IOException]))
 
+(defn- get-descriptive-job-name
+  "Extracts a descriptive job name from the job state object.  We can count on
+   a useful job description for data notifications, so the job description will
+   be used for them.  For other types of notifications the name of the job is
+   the best candidate."
+  [state]
+  (if (= (:type state) "data")
+    (:description state)
+    (:name state)))
+
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
   [state]
-  (str (:name state) " " (lower-case (:status state))))
+  (str (get-descriptive-job-name state) " " (lower-case (:status state))))
 
 (defn- job-completed
   "Determines if a job has completed."

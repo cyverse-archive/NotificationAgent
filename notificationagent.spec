@@ -6,8 +6,8 @@
 Summary: notificationagent
 Name: notificationagent
 Version: 0.1.0
-Release: 6
-Epoch: 0
+Release: 7
+kEpoch: 0
 BuildArchitectures: noarch
 Group: Applications
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
