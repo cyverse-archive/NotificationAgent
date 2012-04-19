@@ -1,6 +1,6 @@
 (defproject notificationagent "1.1.0-SNAPSHOT"
   :description "Notification Agent v1.1.0"
-  :dependencies [[org.clojure/clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.1"]
                  [org.clojure/tools.logging "0.2.3"]
                  [compojure "1.0.1"]
