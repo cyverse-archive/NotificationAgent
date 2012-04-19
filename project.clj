@@ -12,7 +12,8 @@
                  [org.codehaus.jackson/jackson-core-asl "1.9.3"]]
   :dev-dependencies [[lein-ring "0.4.5"]
                      [swank-clojure "1.2.1"]
-                     [lein-marginalia "0.7.0"]]
+                     [lein-marginalia "0.7.0"]
+                     [org.iplantc/lein-iplant-rpm "1.1.0-SNAPSHOT"]]
   :ring {:handler notification-agent.core/app}
   :iplant-rpm {:summary "iPlant Notification Agent"
                :release 1
