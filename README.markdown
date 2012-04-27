@@ -356,6 +356,7 @@ an abbreviated form of the notification format stored in the OSM.
         "email_address": "some@email.address"
     }
 }
+```
 
 Only the `type`, `user` and `subject` fields are required.  The `type` field
 contains the notification type, which currently must be known to the UI.  The
