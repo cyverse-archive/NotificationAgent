@@ -6,7 +6,7 @@
         [notification-agent.messages]
         [notification-agent.time])
   (:require [clojure.data.json :as json]
-	    [clj-http.client :as client]
+            [clj-http.client :as client]
             [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log]
             [notification-agent.json :as na-json])
@@ -32,14 +32,6 @@
   [state]
   (re-matches #"(?i)\s*(?:completed|failed)\s*" (:status state)))
 
-(defn- send-email-request
-  "Sends an e-mail request to the iPlant e-mail service."
-  [request]
-  (log/debug "sending an e-mail request:" request)
-  (client/post (email-url)
-               {:body (json/json-str request)
-                :content-type :json}))
-
 (defn- format-email-request
   "Formats an e-mail request that can be sent to the iPlant e-mail service."
   [email state]
@@ -60,18 +52,14 @@
   [state]
   (:notify state false))
 
-(defn- valid-email-addr
-  "Validates an e-mail address."
-  [addr]
-  (and (not (nil? addr)) (re-matches #"^[^@ ]+@[^@ ]+$" addr)))
-
-(defn- send-email-if-requested
-  "Sends an e-mail notifying the user of the job status change if e-mail
+(defn- add-email-request
+  "Includes an e-mail request in a notificaiton message if e-mail
    notifications were requested."
-  [state]
+  [msg state]
   (let [addr (:email state)]
     (if (and (email-enabled) (email-requested state) (valid-email-addr addr))
-      (send-email-request (format-email-request addr state)))))
+      (assoc msg :email_request (format-email-request addr state))
+      msg)))
 
 (defn- state-to-msg
   "Converts an object representing a job state to a notification message."
@@ -98,44 +86,12 @@
              :analysis_name (:analysis_name state "")
              :description (:description state "")}})
 
-(defn- persist-msg
-  "Persists a message in the OSM."
-  [msg]
-  (log/debug "saving a message in the OSM:" msg)
-  (osm/save-object (notifications-osm) msg))
-
-(defn- send-msg-to-recipient
-  "Forawards a message to a single recipient."
-  [url msg]
-  (log/debug "sending message to" url)
-  (try
-    (client/post url {:body msg})
-    (catch IOException e
-      (log/error e "unable to send message to" url))))
-
-(defn- send-msg
-  "Forwards a message to zero or more recipients."
-  [msg]
-  (let [recipients (notification-recipients)]
-    (log/debug "forwarding message to" (count recipients) "recipients")
-    (doall (map #(send-msg-to-recipient % msg) recipients))))
-
-(defn- persist-and-send-msg
-  "Persists a message in the OSM and sends it to any receivers and returns
-   the state object."
-  [uuid state]
-  (let [msg (state-to-msg state)
-        uuid (persist-msg msg)]
-    (log/debug "UUID of persisted message:" uuid)
-    (send-msg (json/json-str (reformat-message uuid msg)))))
-
 (defn- handle-completed-job
   "Handles a job status update request for a job that has completed and
    returns the state object."
   [uuid state]
   (log/debug "job" (:name state) "just completed")
-  (send-email-if-requested state)
-  (persist-and-send-msg uuid state))
+  (persist-and-send-msg (add-email-request (state-to-msg state) state)))
 
 (defn- get-notification-status-object
   "Loads the notification status object for the job with the given UUID."
@@ -172,7 +128,7 @@
   (let [completed (job-completed state)]
     (if completed
       (handle-completed-job uuid state)
-      (persist-and-send-msg uuid state))
+      (persist-and-send-msg (state-to-msg state)))
     (update-notification-status state)))
 
 (defn- job-status-changed
@@ -213,51 +169,11 @@
   (dorun (map #(fix-job-status (:object_persistence_uuid %) (:state %))
               (get-jobs-with-inconsistent-state))))
 
-(defn- job-status-bucket-empty
-  "Determines whether or not the job status bucket is empty."
-  []
-  (let [results (osm/query (job-status-osm) {})]
-    (empty? (:objects (na-json/read-json results)))))
-
-(defn get-values
-  "Gets multiple values from a map."
-  [m k & more]
-  (map #(get m %) (cons k more)))
-
-(defn- load-all-notifications
-  "Loads all of the notifications that have ever been logged, filtering out
-   any that appear to be invalid."
-  []
-  (filter #(not (nil? (get-in % [:state :message :timestamp])))
-          (:objects (na-json/read-json (osm/query (notifications-osm) {})))))
-
-(defn- get-payload
-  "Extracts the payload from a notificaiton object in the OSM."
-  [obj]
-  (get-in obj [:state :payload]))
-
-(defn load-job-statuses
-  "Loads the most recent status seen by the notification agent for all jobs."
-  []
-  (apply merge
-         (map #(apply hash-map (get-values (get-payload %) :id :status))
-              (notification-agent.messages/sort-messages
-                (load-all-notifications)))))
-
-(defn- initialize-job-status-bucket
-  "Initializes the job status bucket in the OSM."
-  []
-  (log/info "initializing the job status bucket in the OSM")
-  (dorun (map #(osm/save-object (job-status-osm) {:id (key %) :status (val %)})
-              (load-job-statuses))))
-
 (defn initialize-job-status-service
   "Performs any tasks required to initialize the job status service."
   []
   (try
-    (do 
-      (when (job-status-bucket-empty) (initialize-job-status-bucket))
-      (fix-inconsistent-state))
+    (fix-inconsistent-state)
     (catch Exception e
       (log/error e "unable to initialize job status service"))))
 

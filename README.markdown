@@ -1,21 +1,55 @@
 # Notification Agent
  
-This service accepts callback notifications from the OSM about job status
-changes and provides an endpoint for the Discovery Environment that is used to
-look up the states of a user's analyses.  It also triggers the emails that are
-sent when the state of an analysis changes.
+This service accepts either arbitrary notification requests or callback
+notifications from the OSM about job status changes and provides endpoints for
+the Discovery Environment that are used to look up the notifications for the
+current user.  It also triggers the emails that are sent when e-mail
+notifications are requested.
 
 ## Overview
 
 The notification agent provides one endpoint that is designed to accept
-incoming job status updates from the OSM and three endpoints that are designed
-to accept requests from the Discovery Environment.  The endpoint that accepts
-updates from the OSM is `/job-status`.  This endpoint accepts updates in the
-same format that is used by the JEX and Panopticon to store job status
-information in the OSM:
+arbitrary notification requests from arbitrary sources, one endpoint that is
+designed to accept incoming job status updates from the OSM and three
+endpoints that are designed to accept requests from the Discovery Environment.
+The endpoint that accepts arbitrary notification requests is `/notification`,
+which accepts JSON request bodies in the following format:
 
 ```json
 {
+    "type": "some_notification_type",
+    "user": "some_user_name",
+    "subject": "some notification subject",
+    "message": "some message text",
+    "email": true,
+    "email_template": "some_email_template_name",
+    "payload": {
+        "email_address": "some@email.address"
+    }
+}
+```
+
+The `type`, `user` and `subject` fields are all required.  Failure to include
+any of these fields in the request will cause the service to return an error
+response.  The `message` field is optional and will default to the value of
+the `subject` field if it's not provided.  The `email` field contains a flag
+indicating whether or not an e-mail message should be sent.  This field is
+optional and defaults to `false` if it's not provided.  The `email_template`
+field is required if an e-mail is requested and must contain the name of an
+e-mail template that is known to the iPlant e-mail service.  Failure to
+include the name of a valid e-mail template in this field will result in the
+e-mail message not being sent.  The `payload` field is required if an e-mail
+message is requested, and should contain the user's e-mail address along with
+any parameters that are required by the e-mail template.  All arbitrary
+notifications are stored in the `notifications` bucket in the OSM.
+
+The endpoint that accepts updates from the OSM is `/job-status`, which accepts
+updates in the same format that is used by the JEX and Panopticon to store job
+status information in the OSM:
+
+```json
+{
+    "type": "some_notification_type",
     "analysis_name" : "Some analysis name",
     "completion_date" : "Tue Jan 31 2012 08:58:40 GMT-0700 (MST)",
     "analysis_description" : "Some analysis description",
@@ -96,12 +130,12 @@ always in this format:
 }
 ```
 
-Once the notification is stored in the `notifications` bucket of the OSM, it
-can be retrieved from the notification agent using the `/get-messages`
-endpoint or the `/get-unseen-messages` endpoint.  These endpoints are roughly
-equivalent except that the latter can only be used to list messages that
-haven't been seen by the user yet.  The `/get-messages` endpoint takes a JSON
-request body in this format:
+Once a notification is stored in the `notifications` bucket of the OSM, it can
+be retrieved from the notification agent using the `/get-messages` endpoint or
+the `/get-unseen-messages` endpoint.  These endpoints are roughly equivalent
+except that the latter can only be used to list messages that haven't been
+seen by the user yet.  The `/get-messages` endpoint takes a JSON request body
+in this format:
 
 ```json
 {
@@ -154,27 +188,15 @@ an error or warning message.  An attempt to delete a message that doesn't
 exist will not cause an error, but it will cause a warning message to be
 logged in the notification agent's log file.
 
-## Notification Status Tracking
+## Notification Job Status Tracking
 
 The notification agent keeps track of the status of each job that it sees,
-which allows the notification agent to detect when the overall status of each
-job changes.  This tracking is currently done in an in-memory map that
-associates job identifiers with the most recent job status seen by the
-notification agent.  This obviously poses some scalability problems, so a
-future version of the notification agent will be modified to store the most
-recent status of each job in a different way.  One possibility is to store the
-most recent status for each job in a different bucket in the OSM.  Another
-possibility is to store the state in a relational database.
+which allows it to detect when the overall status of each job changes.  This
+tracking is managed by storing records containing only the job identifier and
+the last status of the job that was seen by the notification agent in the
+`notificationagent_job_status` bucket of the OSM.
 
 ## Startup Tasks
-
-Because notifications are stored in memory, the notification agent needs to
-load the most recent status that the notification agent has seen for each
-job.  This is done by walking through all of the notifications that have been
-generated (deleted or not) and building the in-memory map.  This will tend to
-cause the notification agent start-up time to become slower as more and more
-notifications are stored in the OSM.  This startup delay will be eliminated
-when the notification status tracking mechanism is changed in the future.
 
 If there is a configuration problem or the notification is down for an
 extended period of time then it's possible for the status of a job to be
@@ -183,12 +205,6 @@ reason, the notification agent scans the entire OSM upon startup, searching
 for jobs for which the current job status doesn't match the status most
 recently seen by the notification agent for that job.  One notification will
 be generated for every job for which an inconsistent state is detected.
-
-At the time of this writing, the job status tracking mechanism has been
-changed for the notification agent in general, but not for the code that
-generates notifications for jobs whose status has changed while the
-notificaiton agent was down.  This can result in duplicate notificaitons under
-some circumstances.  This problem will be fixed in an upcoming release.
 
 ## Installation and Configuration
 
@@ -220,6 +236,9 @@ notificationagent.email-template=analysis_status_change
 
 # Notification recipients.
 notificationagent.recipients=
+
+# Listen port.
+notificationagent.listen-port=65533
 ```
 
 The OSM configuration settings tell the notification agent how to connect to
@@ -231,28 +250,32 @@ most recent status it has seen for each job.
 
 The e-mail configuration settings are all fairly self-explanatory except for
 the template, which is the name of the template that the e-mail service uses
-when generating the message text.  In general, this setting will not change,
-but it has been made configurable in case we need to support different
-templates for different deployments.
+when generating the message text for job status updates.  In general, this
+setting will not change, but it has been made configurable in case we need to
+support different templates for different deployments.
 
-The `notification.recipients` setting is a list of URLs to send notifications
-to when a job status update is processed.  This feature is intended to be used
-for server push, so this setting will probably be left blank until server push
-is implemented or we find another use for this feature.
+The `notificationagent.recipients` setting is a list of URLs to send
+notifications to when a job status update is processed.  This feature is
+intended to be used for server push, so this setting will probably be left
+blank until server push is implemented or we find another use for this
+feature.
+
+The `notificationagent.listen-port` setting contains the port number that the
+notification agent should listen to for incoming requests.
 
 ### Zookeeper Connection Information
 
 One piece of information that can't be stored in Zookeeper is the information
 required to connect to Zookeeper.  For the notification agent, this is stored
-in a single file: `/etc/notificationagent/notificationagent.properties`.
-Here's an example:
+in a single file: `/etc/iplant-services/zkhosts.properties`.  Here's an
+example:
 
 ```properties
-zookeeper=zookeeper://127.0.0.1:2181
+zookeeper=by-tor:1234,snow-dog:4321
 ```
 
-After installing the notification agent, it will be necessary to modify this
-file so that it points to teh correct host and port.
+After installing the notification agent, it may be necessary to modify this
+file so that it points to the correct host and port.
 
 ### Logging Settings
 
@@ -261,8 +284,8 @@ troubleshooting, logging settings are not stored in Zookeeper.  Instead,
 they're stored in a file on the local file system in
 `/etc/notificationagent/log4j.properties'.  Since the notification agent uses
 log4j, a lot of configuration settings are available.  See the [log4j
-documentation](http://logging.apache.org/log4j/1.2/manual.html). for
-detailed information about how to configure logging.
+documentation](http://logging.apache.org/log4j/1.2/manual.html). for detailed
+information about how to configure logging.
 
 Even though complex logging configuration options are available, they're
 normally not necessary because it's possible to exert a lot of control over
@@ -271,10 +294,6 @@ logging configuration file looks like this:
 
 ```properties
 log4j.rootLogger=WARN, A
-
-log4j.appender.B=org.apache.log4j.ConsoleAppender
-log4j.appender.B.layout=org.apache.log4j.PatternLayout
-log4j.appender.B.layout.ConversionPattern=%d{MM-dd@HH:mm:ss} %-5p (%13F:%L) %3x - %m%n
 
 log4j.appender.A=org.apache.log4j.RollingFileAppender
 log4j.appender.A.File=/var/log/notificationagent/notificationagent.log
@@ -317,6 +336,70 @@ dennis$ curl http://by-tor:65533/
 Welcome to the notification agent!
 ```
 
+### Requesting an Arbitrary Notification
+
+Endpoint POST /notification
+
+The purpose of this endpoint is to allow other iPlant services to request
+notifications to be sent to the user.  The request body for this endpoint is
+an abbreviated form of the notification format stored in the OSM.
+
+```json
+{
+    "type": "some_notification_type",
+    "user": "some_user_name",
+    "subject": "some subject description",
+    "message": "some message text",
+    "email": true,
+    "email_template": "some_template_name",
+    "payload": {
+        "email_address": "some@email.address"
+    }
+}
+
+Only the `type`, `user` and `subject` fields are required.  The `type` field
+contains the notification type, which currently must be known to the UI.  The
+UI currently knows of two notification types `data` and `analysis`.  The
+`user` field contains the user's unqualified username.  (For example, if the
+full username is `nobody@iplantcollaborative.org` then the short username is
+`nobody`.)  The `subject` field contains a briev description of the event that
+prompted the notification.  The `message` field contains an optional
+description of the event that prompted the notification.  If this field is not
+provided then its value will default to that of the `subject` field.  The
+`email` field contains a Boolean flag indicating whether or not an e-mail
+message should be sent.  The value of this field defaults to `false` if not
+provided.  The `email_template` field is required if an e-mail is requested,
+and it must contain the name of an e-mail template that is known to the
+iplant-email service.  The payload is optional and may contain arbitrary
+information that may be of use to any recipient of the notification.  If an
+e-mail is requested then this field must contain the user's e-mail address
+along with any information required by the selected e-mail template.  Here's
+an example:
+
+```
+curl -sd '
+{
+    "type": "nada",
+    "user": "nobody",
+    "subject": "nothing happened",
+    "message": "nada y pues nada y pues nada",
+    "email": true,
+    "email_template": "nothing_happened",
+    "payload": {
+        "email_address": "nobody@iplantcollaborative.org"
+    }
+}
+' http://services-2:31320/notification
+```
+
+Note that this example is fictional and will not actually send an e-mail
+message because the requested e-mail template doesn't exist.  The notification
+type is also not known to the UI, which will cause errors in the UI.
+
+If the service succeeds, a 200 status code is returned with no response body.
+Otherwise, either a 400 or a 500 status code is returned and a brief
+description of the problem is included in the response body.
+
 ### Informing the Notification Agent of a Job Status Change
 
 Endpoint: POST /job-status
@@ -327,6 +410,7 @@ format that is used to store the job state information in the OSM:
 
 ```json
 {
+    "type": "some_notification_type",
     "analysis_name" : "Some analysis name",
     "completion_date" : "Tue Jan 31 2012 08:58:40 GMT-0700 (MST)",
     "analysis_description" : "Some analysis description",
