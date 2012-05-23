@@ -17,7 +17,7 @@
          :init notification-agent.core/load-configuration}
   :extra-classpath-dirs ["conf/test"]
   :iplant-rpm {:summary "iPlant Notification Agent"
-               :release 1
+               :release 2
                :provides "notificationagent"
                :dependencies ["iplant-service-config >= 0.1.0-4"]
                :config-files ["log4j.properties"]
