@@ -42,3 +42,8 @@
   {:status 500
    :body (str "Internal Error: " (.getMessage e) "\n")
    :headers {"Content-Type" "text/plain"}})
+
+(defn valid-email-addr
+  "Validates an e-mail address."
+  [addr]
+  (and (not (nil? addr)) (re-matches #"^[^@ ]+@[^@ ]+$" addr)))

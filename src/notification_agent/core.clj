@@ -6,6 +6,7 @@
         [notification-agent.config]
         [notification-agent.delete]
         [notification-agent.job-status]
+        [notification-agent.notifications]
         [notification-agent.query])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -27,6 +28,11 @@
   [body]
   (trap #(handle-job-status body)))
 
+(defn- notification
+  "Handles a generic notification request."
+  [body]
+  (trap #(handle-notification-request body)))
+
 (defn- messages
   "Handles a query for seen or unseen messages."
   [body]
@@ -45,6 +51,7 @@
 (defroutes notificationagent-routes
   (GET "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
+  (POST "/notification" [:as {body :body}] (notification body))
   (POST "/get-messages" [:as {body :body}] (messages body))
   (POST "/get-unseen-messages" [:as {body :body}] (unseen-messages body))
   (POST "/delete" [:as {body :body}] (delete body))
@@ -58,24 +65,23 @@
 (def app
   (site-handler notificationagent-routes))
 
-(defn -main
-  [& args]
+(defn- load-configuration
+  "Loads the configuration from Zookeeper."
+  []
   (def zkprops (cc-props/parse-properties "zkhosts.properties"))
   (def zkurl (get zkprops "zookeeper"))
-
-  ;; Load the configuration from zookeeper.
   (cl/with-zk
     zkurl
     (when (not (cl/can-run?))
       (log/warn "THIS APPLICATION CANNOT RUN ON THIS MACHINE. SO SAYETH ZOOKEEPER.")
       (log/warn "THIS APPLICATION WILL NOT EXECUTE CORRECTLY.")
       (System/exit 1))
-    (reset! props (cl/properties "notificationagent")))
+    (reset! props (cl/properties "notificationagent"))
+    (log/warn @props)))
 
-  ;; Initialize the job-status service.
+(defn -main
+  [& args]
+  (load-configuration)
   (initialize-job-status-service)
-
-  ;; Start the server.
-  (log/warn @props)
   (log/warn "Listening on" (listen-port))
   (jetty/run-jetty (site-handler notificationagent-routes) {:port (listen-port)}))
