@@ -18,12 +18,13 @@
   :profiles {:dev {:resource-paths ["conf/test"]}}
   :extra-classpath-dirs ["conf/test"]
   :iplant-rpm {:summary "iPlant Notification Agent"
-               :release 2
+               :release 3
                :provides "notificationagent"
                :dependencies ["iplant-service-config >= 0.1.0-4"]
                :config-files ["log4j.properties"]
                :config-path "conf/main"}
   :aot [notification-agent.core]
   :main notification-agent.core
+  :uberjar-exclusions [#"(?i)[.]sf"]
   :repositories {"iplantCollaborative"
                  "http://projects.iplantcollaborative.org/archiva/repository/internal/"})
