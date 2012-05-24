@@ -12,3 +12,6 @@
 /.classpath
 /bin
 *~
+/notificationagent
+/notificationagent*.tar.gz
+/notificationagent.spec
