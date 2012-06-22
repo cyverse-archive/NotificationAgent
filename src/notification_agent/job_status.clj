@@ -188,4 +188,4 @@
     (if (job-status-changed state)
       (handle-status-change uuid state)
       (log/debug "the status of job" (:name state) "did not change"))
-    (resp 200 nil)))
+    (success-resp)))

@@ -1,12 +1,14 @@
 (ns notification-agent.messages
  (:use [notification-agent.config]
        [notification-agent.messages]
-       [notification-agent.time])
+       [notification-agent.time]
+       [slingshot.slingshot :only [throw+]])
  (:require [clj-http.client :as client]
            [clojure-commons.osm :as osm]
            [clojure.data.json :as json]
            [clojure.tools.logging :as log])
- (:import [java.io IOException]))
+ (:import [java.io IOException]
+          [java.util Comparator]))
 
 (defn- fix-timestamp
   "Some timestamps are stored in the default timestamp format used by
@@ -80,7 +82,29 @@
   [msg]
   (parse-timestamp (get-in msg [:state :message :timestamp])))
 
+(def ^:private keyfn-for
+  "The function used to obtain the sort key for all of the supported sort
+   fields."
+  {:timestamp get-message-timestamp})
+
+(def ^:private comparator-for
+  "The comparators to use for different sort orders."
+  {:asc compare
+   :des #(compare %2 %)})
+
 (defn sort-messages
-  "Sorts messages in ascending order by message timestamp."
-  [messages]
-  (sort-by #(get-message-timestamp %) messages))
+  "Sorts messages by a provided field name in the specified order."
+  [messages field dir]
+  (let [keyfn  (keyfn-for field)
+        compfn (comparator-for dir)]
+    (when (nil? keyfn)
+      (throw+ {:type  :illegal-argument
+               :code  ::unrecognized-sort-field
+               :param "sortField"
+               :value field}))
+    (when (nil? compfn)
+      (throw+ {:type  :illegal-argument
+               :code  ::unrecognized-sort-order
+               :param "sortDir"
+               :value dir}))
+    (sort-by keyfn compfn messages)))

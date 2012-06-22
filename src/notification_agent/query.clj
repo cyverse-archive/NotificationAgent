@@ -3,7 +3,8 @@
        [notification-agent.config]
        [notification-agent.messages]
        [notification-agent.time]
-       [clojure.pprint :only (pprint)])
+       [clojure.string :only [blank?]]
+       [slingshot.slingshot :only [throw+ try+]])
  (:require [clojure.data.json :as json]
            [clojure-commons.osm :as osm]
            [clojure.tools.logging :as log]
@@ -25,58 +26,90 @@
         obj (na-json/read-json result)]
     obj))
 
-(defn- update-seen-flag
-  "Updates the seen flag in a notification message."
-  [{id :object_persistence_uuid state :state}]
-  (log/trace "updating the seen flag for message:" id)
-  (when (not (:seen state))
-    (osm/update-object (notifications-osm) id (assoc state :seen true))))
+(defn- filter-by-type
+  "Filters messages by type."
+  [type messages]
+  (if (blank? type)
+    messages
+    (filter #(= type (get-in % [:state :type])) messages)))
 
 (defn- extract-messages
   "Extracts at most limit notification messages from objects returned by the
    OSM.  If limit is nil or nonpositive then all of the notification messages
    will be returned."
-  [limit results]
+  [query results]
   (log/debug "extracting messages from" results)
-  (let [messages (sort-messages (:objects results))]
-    (map #(do (update-seen-flag %)
-            (reformat-message (:object_persistence_uuid %) (:state %)))
-      (if (and (number? limit) (> limit 0))
-        (take-last limit messages)
-        messages))))
+  (let [limit      (:limit query)
+        offset     (:offset query)
+        sort-field (:sort-field query)
+        sort-dir   (:sort-dir query)
+        messages   (:objects results)
+        messages   (filter-by-type (:filter query) messages)
+        messages   (sort-messages messages sort-field sort-dir)
+        messages   (if (> offset 0) (drop offset messages) messages)
+        messages   (if (> limit 0) (take limit messages) messages)]
+    (map #(reformat-message (:object_persistence_uuid %) (:state %))
+         messages)))
 
 (defn- get-messages*
   "Retrieves notification messages from the OSM."
   [query]
-  (let [body {:messages (extract-messages (:limit query) (query-osm query))}]
+  (let [results (query-osm query)
+        body    {:messages (extract-messages query results)}]
     (json-resp 200 (json/json-str body))))
 
-(defn get-messages
-  "Looks up messages in the OSM that may or may not have been seen yet.  The
-   sender can specify that the query return either seen or unseen messages by
-   specifying the 'seen' flag value in the request JSON.  The request is in
-   the following format:
-
-   {
-       \"user\":  \"username\",
-       \"seen\":  false,
-       \"limit\": 50
-   }
-
-   Where both the 'seen' and 'limit' fields are optional.  If the 'seen' field
-   is omitted then both seen and unseen messages will be returned.  If the
-   'limit' field is omitted then all messages that satisfy the other criteria
-   will be returned."
-  [body]
-  (let [query (parse-body body)]
-    (log/debug "handling a query for general messages:" query)
-    (get-messages* query)))
-
 (defn get-unseen-messages
-  "Looks up messages in the OSM that have not been seen yet.  All other search
-   criteria being the same, this function is equivalent to calling get-messages
-   and specifying a 'seen' flag of 'false'."
-  [body]
-  (let [query (parse-body body)]
-    (log/debug "handling a query for unseen messages:" query)
-    (get-messages* (assoc query :seen false))))
+  "Looks up all messages in the OSM that have not been seen yet for a specified
+   user."
+  [{:keys [user]}]
+  (log/debug "retrieving unseen messages for" user)
+  (get-messages* {:user       user
+                  :limit      0
+                  :offset     0
+                  :seen       false
+                  :sort-field :timestamp
+                  :sort-dir   :des}))
+
+(defn- required-string
+  "Extracts a required string argument from the query-string map."
+  [k m]
+  (let [v (m k)]
+    (when (blank? v)
+      (throw+ {:type  :illegal-argument
+               :code  ::missing-or-empty-param
+               :param (name k)}))
+    v))
+
+(defn- required-long
+  "Extracts a required long argument from the query-string map."
+  [k m]
+  (let [v (required-string k m)]
+    (try+
+     (Long/parseLong v)
+     (catch NumberFormatException e
+       (throw+ {:type  :illegal-argument
+                :code  ::invalid-long-integer-param
+                :param (name k)
+                :value v})))))
+
+(defn get-paginated-messages
+  "Provides a paginated view for notification messages.  This endpoint takes
+   several query-string parameters:
+
+       user      - the name of the user to get notifications for
+       limit     - the maximum number of messages to return
+       offset    - the number of leading messages to skip
+       sortField - the field to use when sorting the messages - optional
+                   (currently, only 'timestamp' can be used)
+       sortDir   - the sort direction, 'asc' or 'des' - optional (des)
+       filter    - filter by message type ('data', 'analysis', etc.)
+
+   The limit and offset are the only fields that are currently required."
+  [query-params]
+  (let [query {:user       (required-string :user query-params)
+               :limit      (required-long :limit query-params)
+               :offset     (required-long :offset query-params)
+               :sort-field (keyword (:sortField query-params "timestamp"))
+               :sort-dir   (keyword (:sortDir query-params "des"))
+               :filter     (:filter query-params)}]
+    (get-messages* query)))

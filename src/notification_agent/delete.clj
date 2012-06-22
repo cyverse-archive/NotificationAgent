@@ -1,6 +1,7 @@
 (ns notification-agent.delete
  (:use [notification-agent.common]
-       [notification-agent.config])
+       [notification-agent.config]
+       [slingshot.slingshot :only [throw+]])
  (:require [clojure.tools.logging :as log]
            [clojure-commons.osm :as osm]
            [notification-agent.json :as na-json]))
@@ -42,5 +43,8 @@
     (if (and (map? request) (vector? (:uuids request)))
       (do
         (delete-messages* (:uuids request))
-        (resp 200 nil))
-      (resp 400 "The request body must contain a list of identifiers.\n"))))
+        (success-resp))
+      (throw+ {:type  :illegal-argument
+               :code  ::no-identifiers-in-request
+               :param "uuids"
+               :value body}))))
