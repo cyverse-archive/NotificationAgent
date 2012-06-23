@@ -46,16 +46,19 @@
         messages   (:objects results)
         messages   (filter-by-type (:filter query) messages)
         messages   (sort-messages messages sort-field sort-dir)
+        msg-count  (count messages)
         messages   (if (> offset 0) (drop offset messages) messages)
-        messages   (if (> limit 0) (take limit messages) messages)]
-    (map #(reformat-message (:object_persistence_uuid %) (:state %))
-         messages)))
+        messages   (if (> limit 0) (take limit messages) messages)
+        reformat   #(reformat-message (:object_persistence_uuid %) (:state %))
+        messages   (map reformat messages)]
+    {:total    msg-count
+     :messages messages}))
 
 (defn- get-messages*
   "Retrieves notification messages from the OSM."
   [query]
   (let [results (query-osm query)
-        body    {:messages (extract-messages query results)}]
+        body    (extract-messages query results)]
     (json-resp 200 (json/json-str body))))
 
 (defn get-unseen-messages
