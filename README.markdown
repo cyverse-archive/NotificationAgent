@@ -377,7 +377,7 @@ Welcome to the notification agent!
 
 ### Requesting an Arbitrary Notification
 
-Endpoint POST /notification
+* Endpoint: POST /notification
 
 The purpose of this endpoint is to allow other iPlant services to request
 notifications to be sent to the user.  The request body for this endpoint is
