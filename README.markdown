@@ -131,45 +131,66 @@ always in this format:
 ```
 
 Once a notification is stored in the `notifications` bucket of the OSM, it can
-be retrieved from the notification agent using the `/get-messages` endpoint or
-the `/get-unseen-messages` endpoint.  These endpoints are roughly equivalent
-except that the latter can only be used to list messages that haven't been
-seen by the user yet.  The `/get-messages` endpoint takes a JSON request body
-in this format:
+be retrieved from the notification agent using the `/messages` endpoint or the
+`/unseen-messages` endpoint.  These endpoints are roughly equivalent except
+that the latter can only be used to list messages that haven't been seen by
+the user yet.  The `/messages` endpoint takes six query-string parameters:
 
-```json
-{
-    "user": "username",
-    "seen": "seen-flag",
-    "limit": "limit"
-}
-```
+<table>
+    <thead>
+        <tr><th>Name</th><th>Description</th><th>Required/Optional</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>user</td>
+            <td>The name of the user to retrieve notifications for.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>limit</td>
+            <td>The maximum number of notifications to return at a time.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>offset</td>
+            <td>The index of the starting message.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>sortField</td>
+            <td>
+                The field to use when sorting messages.  Currently, the only
+                supported value for this field is `timestamp`.
+            </td>
+            <td>Optional (defaults to `timestamp`)</td>
+        </tr>
+        <tr>
+            <td>sortDir</td>
+            <td>
+                The sorting direction, which can be `asc` (ascending) or `des`
+                (descending).
+            </td>
+            <td>Optional (defaults to `des`)</td>
+        </tr>
+        <tr>
+            <td>filter</td>
+            <td>
+                Specifies the type of notification messages to return, which
+                can be `data`, `analysis` or `tool`.  Other types of
+                notifications may be added in the future.  If this parameter
+                it not specified then all types of notifications will be
+                returned.
+            </td>
+            <td>Optional</td>
+        </tr>
+    </tbody>
+</table>
 
-The `user` field is the only field that is required in the query.  The `seen`
-flag is optional.  If this field is omitted then both messages that have been
-seen and messages that have not been seen will be included in the results.
-The `limit` field is also optional.  If, for example, a limit of 50 is
-specified then at most 50 messages will be returned by the query, with the
-most recent notifications taking precedence.  If no limit is specified then
-all of the messages that match the rest of the query parameters will be
-returned in the results.
+The `/unseen-messages` endpoint takes only the `user` parameter and returns all
+of the notifications that haven't been marked as seen for that user.
 
-The `/get-unseen-messages` endpoint takes a JSON request body in the same
-format as the `/get-messages` endpoint, but it's pointless to include the
-`seen` flag in the request body (because this service always behaves as though
-the `seen` flag were specified and set to `true`).
-
-Both the `/get-messages` and `/get-unseen-messages` endpoints mark
-notifications that they return as having been seen.  So that a query for
-messages that have not been seen will never return a message that has been
-returned by any endpoint.  This feature allows the DE to poll for notification
-messages without having to worry about receiving the same notification message
-more than once per session.
-
-Notifications that the user no longer wishes to see may be marked as deleted
-so no message query will ever return the message again.  Messages are deleted
-using the `/delete` endpoint.  The `/delete` endpoint takes a JSON request
-body in this format:
+Notifications may be marked as seen using the `/seen` endpoint.  This endpoint
+accepts a JSON request body in the following format:
 
 ```json
 {
@@ -180,6 +201,22 @@ body in this format:
     ]
 }
 ```
+
+This endpoint always succeeds as long as no unexpected errors occur.  If a
+UUID that doesn't correspond to an actual notification is sent to this
+endpoint then a warning message is written to the notification agent's log
+file, but the problem is otherwise ignored.  If a notification that has
+already been marked as seen is specified then the notification will not be
+changed.
+
+Messages that have been marked as seen will no longer be returned by the
+`/unseen-messages` endpoint, but will continue to be returned by the
+`/messages` endpoint as long as they are not marked as deleted.
+
+Notifications that the user no longer wishes to see may be marked as deleted
+so no message query will ever return the message again.  Messages are deleted
+using the `/delete` endpoint.  The `/delete` endpoint takes a JSON request
+body in the same format as the `/seen` endpoint.
 
 This service will delete the messages corresponding to all of the identifiers
 that are included in the request body.  An attempt to delete a message that
@@ -198,7 +235,7 @@ the last status of the job that was seen by the notification agent in the
 
 ## Startup Tasks
 
-If there is a configuration problem or the notification is down for an
+If there is a configuration problem or the notification agent is down for an
 extended period of time then it's possible for the status of a job to be
 updated without the notification agent being aware of the change.  For this
 reason, the notification agent scans the entire OSM upon startup, searching
@@ -317,10 +354,12 @@ the `MaxBackupIndex` parameter.
 
 ## Service Details
 
-All service URLs are listed as relative URLs, and no parameters are included
-in the URL.  Instead, every notification agent service except for the root
-service (which merely returns a welcome message) accepts only POST requests
-with a JSON request body.
+All service URLs are listed as relative URLs.  The welcome endpoint, which can
+be used to verify that the notification agent is running and responsive,
+accepts GET requests with no query-string parameters.  Both message query
+endpoints accept GET requests with parameters passed to the service in the
+query string.  The rest of the services all accept POST requests with a JSON
+request body.
 
 ### Verifying that the Notification Agent is Running
 
@@ -360,11 +399,11 @@ an abbreviated form of the notification format stored in the OSM.
 
 Only the `type`, `user` and `subject` fields are required.  The `type` field
 contains the notification type, which currently must be known to the UI.  The
-UI currently knows of two notification types `data` and `analysis`.  The
-`user` field contains the user's unqualified username.  (For example, if the
-full username is `nobody@iplantcollaborative.org` then the short username is
-`nobody`.)  The `subject` field contains a briev description of the event that
-prompted the notification.  The `message` field contains an optional
+UI currently knows of three notification types `data`, `analysis` and `tool`.
+The `user` field contains the user's unqualified username.  (For example, if
+the full username is `nobody@iplantcollaborative.org` then the short username
+is `nobody`.)  The `subject` field contains a brief description of the event
+that prompted the notification.  The `message` field contains an optional
 description of the event that prompted the notification.  If this field is not
 provided then its value will default to that of the `subject` field.  The
 `email` field contains a Boolean flag indicating whether or not an e-mail
@@ -390,16 +429,20 @@ curl -sd '
         "email_address": "nobody@iplantcollaborative.org"
     }
 }
-' http://services-2:31320/notification
+' http://services-2:31320/notification | python -mjson.tool
+{
+    "success": true
+}
 ```
 
 Note that this example is fictional and will not actually send an e-mail
 message because the requested e-mail template doesn't exist.  The notification
 type is also not known to the UI, which will cause errors in the UI.
 
-If the service succeeds, a 200 status code is returned with no response body.
-Otherwise, either a 400 or a 500 status code is returned and a brief
-description of the problem is included in the response body.
+If the service succeeds, a 200 status code is returned with a simple JSON
+response body indicating that the service call succeeded.  Otherwise, either a
+400 or a 500 status code is returned and a brief description of the problem is
+included in the response body.
 
 ### Informing the Notification Agent of a Job Status Change
 
@@ -453,69 +496,163 @@ format that is used to store the job state information in the OSM:
 }
 ```
 
-If the service succeeds, a 200 status code is returned with no response body.
-Otherwise, either a 400 or a 500 status code is returned and a brief
-description of the problem is included in the response body.
+If the service succeeds, a 200 status code is returned with a simple JSON
+response body indicating that the service call succeeded.  Otherwise, either a
+400 or a 500 status code is returned and a brief description of the problem is
+included in the response body.
 
 ### Getting Notifications from the Notification Agent
 
-Endpoint: POST /get-messages
-Endpoint: POST /get-unseen-messages
+Endpoint: GET /messages
+Endpoint: GET /unseen-messages
 
 These two endpoints can be used to retrieve notifications from the
-notification agent.  The former can be used to get notifications that have
-been seen, notifications that haven't been seen yet, or both.  The latter can
-only be used to retrieve notifications that haven't been seen yet.  Both
-services accept a JSON request body in this format:
+notification agent.  The former can be used to get both notifications that
+have already been seen and notifications that haven't been seen yet.  It is
+very likely that each user will have a lot of notifications that have already
+been seen, so the `/messages` endpoint provides a paginated view, with both
+the number of messages and the index of the starting message specified in the
+query string.  The full list of query string parameters for this endpoint is:
 
-```json
-{
-    "user": "username",
-    "seen": "seen-flag",
-    "limit": "limit"
-}
+<table>
+    <thead>
+        <tr><th>Name</th><th>Description</th><th>Required/Optional</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>user</td>
+            <td>The name of the user to retrieve notifications for.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>limit</td>
+            <td>The maximum number of notifications to return at a time.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>offset</td>
+            <td>The index of the starting message.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>sortField</td>
+            <td>
+                The field to use when sorting messages.  Currently, the only
+                supported value for this field is `timestamp`.
+            </td>
+            <td>Optional (defaults to `timestamp`)</td>
+        </tr>
+        <tr>
+            <td>sortDir</td>
+            <td>
+                The sorting direction, which can be `asc` (ascending) or `des`
+                (descending).
+            </td>
+            <td>Optional (defaults to `des`)</td>
+        </tr>
+        <tr>
+            <td>filter</td>
+            <td>
+                Specifies the type of notification messages to return, which
+                can be `data`, `analysis` or `tool`.  Other types of
+                notifications may be added in the future.  If this parameter
+                it not specified then all types of notifications will be
+                returned.
+            </td>
+            <td>Optional</td>
+        </tr>
+    </tbody>
+</table>
+
+The `/unseen-messages` endpoint can only be used to obtain messages that
+haven't been marked as seen yet.  This service does not provide a paginated
+view because it is likely that users will want to receive any notifications
+that they haven't seen already immediately.  This endpoint accepts only the
+`user` query-string parameter.
+
+Here are some examples:
+
 ```
-
-The `seen` flag is optional for both endpoints and is ignored by the
-`/get-unseen-messages` endpoint.  The `limit` flag is optional for both
-endpoints.  Here's an example:
-
-```
-dennis$ curl -sd '{
-    "user": "ipctest",
-    "seen": true,
-    "limit": 1
-}' http://by-tor:65533/get-messages | python -mjson.tool
+$ curl -s 'http://by-tor:65533/messages?user=ipctest&limit=1&offset=0' | python -mjson.tool
 {
     "messages": [
         {
             "deleted": false, 
             "message": {
-                "id": "EE22CFF3-FA9B-4677-8642-4E542834536F", 
-                "text": "job s2b_01310856 completed", 
-                "timestamp": 1328025520000
+                "id": "6DF4475F-EE81-4063-B457-6EDFA4ED9C5F", 
+                "text": "cat_06221137 completed", 
+                "timestamp": 1340390304000
             }, 
-            "outputDir": "/path/to/analyses/directory/s2b_01310856-2012-01-31-08-56-18.059/", 
+            "outputDir": "/iplant/home/ipctest/analyses/cat_06221137-2012-06-22-11-37-58.636", 
             "outputManifest": [], 
             "payload": {
                 "action": "job_status_change", 
-                "analysis_id": "a7909c999d97347dca20d6aba44fe5294", 
-                "analysis_name": "Create BAM from SAM file", 
+                "analysis_id": "a508674c3c9464ccbbbcf1600650db446", 
+                "analysis_name": "Concatenate Multiple Files", 
                 "description": "", 
-                "enddate": 1328025520000, 
-                "id": "je1d7d621-4feb-4d78-84b2-8c1ec45d6d6d", 
-                "name": "s2b_01310856", 
-                "resultfolderid": "/path/to/analyses/directory/s2b_01310856-2012-01-31-08-56-18.059/", 
-                "startdate": "1328025378059", 
+                "enddate": 1340390297000, 
+                "id": "jf408fc4d-628c-41bb-819c-4b5de9cb24e0", 
+                "name": "cat_06221137", 
+                "resultfolderid": "/iplant/home/ipctest/analyses/cat_06221137-2012-06-22-11-37-58.636", 
+                "startdate": "1340390278636", 
                 "status": "Completed", 
-                "user": "somebody"
+                "user": "ipctest"
             }, 
             "seen": true, 
             "type": "analysis", 
-            "user": "somebody", 
-            "workspaceId": "2"
+            "user": "ipctest", 
+            "workspaceId": "39"
         }
+    ], 
+    "total": 256
+}
+```
+
+```
+$ curl -s 'http://by-tor:65533/unseen-messages?user=ipctest' | python -mjson.tool
+{
+    "messages": [], 
+    "total": 0
+}
+```
+
+### Marking Notifications as Seen
+
+Endpoint: POST /seen
+
+Marking a notification as seen prevents it from being returned by the
+`/unseen-messages` endpoint.  The intent is for this endpoint to be called
+when the user has seen a notification for the first time.  This service
+accepts a request body in the following format:
+
+```json
+{
+    "uuids": [
+        "some-uuid",
+        "some-other-uuid",
+        ...
     ]
+}
+```
+
+If this service succeeds, it returns a 200 status code with a simple JSON
+response body indicating that the service call suceeded.  Otherwise, it
+returns either a 400 or a 500 status code with a brief description of the
+error.  An attempt to mark a non-existent message as seen does not cause the
+service call to fail, but a warning message will be logged in the notification
+agent's log file.  An attempt to mark a message that has already been marked
+as seen is silently ignored.  Here's an example:
+
+```
+$ curl -sd '
+{
+    "uuids": [
+        "6DF4475F-EE81-4063-B457-6EDFA4ED9C5F"
+    ]
+}
+' http://services-2:31320/seen | python -mjson.tool
+{
+    "success": true
 }
 ```
 
@@ -524,8 +661,8 @@ dennis$ curl -sd '{
 Endpoint: POST /delete
 
 "Deleting" a notification entails marking the notification as deleted in the
-OSM so that it won't be returned by either the `/get-messages` service or the
-`/get-unseen-messages` service.  This service accepts a request body in the
+OSM so that it won't be returned by either the `/messages` service or the
+`/unseen-messages` service.  This service accepts a request body in the
 following format:
 
 ```json
@@ -538,22 +675,27 @@ following format:
 }
 ```
 
-If this service succeeds it returns a 200 status code with no response body.
-Otherwise, it returns either a 400 status code or a 500 status code with a
-brief description of the error.  An attempt to delete a message that has
-already been marked as deleted does not result in an error.  Instead, the
-service just treats the request as a no-op.  Similarly, an attempt to delete a
-non-existent message is not treated as an error.  The service also treats this
-condition as a no-op, but it does log a warning message indicating that
-someone tried to delete a message that doesn't exist.  Here's an example:
+If this service succeeds it returns a 200 status code with a simple JSON
+response body indicating that the service call succeeded.  Otherwise, it
+returns either a 400 status code or a 500 status code with a brief description
+of the error.  An attempt to delete a message that has already been marked as
+deleted does not result in an error.  Instead, the service just treats the
+request as a no-op.  Similarly, an attempt to delete a non-existent message is
+not treated as an error.  The service also treats this condition as a no-op,
+but it does log a warning message indicating that someone tried to delete a
+message that doesn't exist.  Here's an example:
 
 ```
-dennis$ curl -sd '{
+$ curl -sd '
+{
     "uuids": [
-        "128C3FBD-B946-4292-8046-954B51CF7204",
-        "EE22CFF3-FA9B-4677-8642-4E542834536F"
+        "361C2A67-3942-4F7A-9734-E5B8B28FDC12"
     ]
-}' http://by-tor:65533/delete
+}
+' http://by-tor:65533/delete | python -mjson.tool
+{
+    "success": true
+}
 ```
 
 ### Unrecognized Service Path

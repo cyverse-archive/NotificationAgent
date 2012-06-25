@@ -75,4 +75,5 @@
   [body]
   (let [request (parse-body body)]
     (validate-request request)
-    (persist-and-send-msg (add-email-request (request-to-msg request)))))
+    (persist-and-send-msg (add-email-request (request-to-msg request)))
+    (success-resp)))
