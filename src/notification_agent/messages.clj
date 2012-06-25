@@ -89,8 +89,8 @@
 
 (def ^:private comparator-for
   "The comparators to use for different sort orders."
-  {:asc compare
-   :des #(compare %2 %)})
+  {:asc  compare
+   :desc #(compare %2 %)})
 
 (defn sort-messages
   "Sorts messages by a provided field name in the specified order."

@@ -167,7 +167,7 @@ the user yet.  The `/messages` endpoint takes six query-string parameters:
         <tr>
             <td>sortDir</td>
             <td>
-                The sorting direction, which can be `asc` (ascending) or `des`
+                The sorting direction, which can be `asc` (ascending) or `desc`
                 (descending).
             </td>
             <td>Optional (defaults to `des`)</td>
@@ -545,7 +545,7 @@ query string.  The full list of query string parameters for this endpoint is:
         <tr>
             <td>sortDir</td>
             <td>
-                The sorting direction, which can be `asc` (ascending) or `des`
+                The sorting direction, which can be `asc` (ascending) or `desc`
                 (descending).
             </td>
             <td>Optional (defaults to `des`)</td>

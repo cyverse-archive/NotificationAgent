@@ -3,7 +3,7 @@
        [notification-agent.config]
        [notification-agent.messages]
        [notification-agent.time]
-       [clojure.string :only [blank?]]
+       [clojure.string :only [blank? lower-case]]
        [slingshot.slingshot :only [throw+ try+]])
  (:require [clojure.data.json :as json]
            [clojure-commons.osm :as osm]
@@ -71,7 +71,7 @@
                   :offset     0
                   :seen       false
                   :sort-field :timestamp
-                  :sort-dir   :des}))
+                  :sort-dir   :desc}))
 
 (defn- required-string
   "Extracts a required string argument from the query-string map."
@@ -95,6 +95,11 @@
                 :param (name k)
                 :value v})))))
 
+(defn- as-keyword
+  "Converts a string to a lower-case keyword."
+  [s]
+  (keyword (lower-case s)))
+
 (defn get-paginated-messages
   "Provides a paginated view for notification messages.  This endpoint takes
    several query-string parameters:
@@ -104,7 +109,7 @@
        offset    - the number of leading messages to skip
        sortField - the field to use when sorting the messages - optional
                    (currently, only 'timestamp' can be used)
-       sortDir   - the sort direction, 'asc' or 'des' - optional (des)
+       sortDir   - the sort direction, 'asc' or 'desc' - optional (desc)
        filter    - filter by message type ('data', 'analysis', etc.)
 
    The limit and offset are the only fields that are currently required."
@@ -112,7 +117,7 @@
   (let [query {:user       (required-string :user query-params)
                :limit      (required-long :limit query-params)
                :offset     (required-long :offset query-params)
-               :sort-field (keyword (:sortField query-params "timestamp"))
-               :sort-dir   (keyword (:sortDir query-params "des"))
+               :sort-field (as-keyword (:sortField query-params "timestamp"))
+               :sort-dir   (as-keyword (:sortDir query-params "desc"))
                :filter     (:filter query-params)}]
     (get-messages* query)))
