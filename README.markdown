@@ -363,7 +363,7 @@ request body.
 
 ### Verifying that the Notification Agent is Running
 
-Endpoint: GET /
+* Endpoint: GET /
 
 The root path in the notification agent can be used to verify that the
 notification agent is actually running.  Sending a GET request to this service
@@ -446,7 +446,7 @@ included in the response body.
 
 ### Informing the Notification Agent of a Job Status Change
 
-Endpoint: POST /job-status
+* Endpoint: POST /job-status
 
 This service intended to be used exclusively as an OSM callback for jobs.
 Because of this, the request body that is sent to this service must be in the
@@ -503,8 +503,8 @@ included in the response body.
 
 ### Getting Notifications from the Notification Agent
 
-Endpoint: GET /messages
-Endpoint: GET /unseen-messages
+* Endpoint: GET /messages
+* Endpoint: GET /unseen-messages
 
 These two endpoints can be used to retrieve notifications from the
 notification agent.  The former can be used to get both notifications that
@@ -618,7 +618,7 @@ $ curl -s 'http://by-tor:65533/unseen-messages?user=ipctest' | python -mjson.too
 
 ### Marking Notifications as Seen
 
-Endpoint: POST /seen
+* Endpoint: POST /seen
 
 Marking a notification as seen prevents it from being returned by the
 `/unseen-messages` endpoint.  The intent is for this endpoint to be called
@@ -658,7 +658,7 @@ $ curl -sd '
 
 ### Deleting Notifications
 
-Endpoint: POST /delete
+* Endpoint: POST /delete
 
 "Deleting" a notification entails marking the notification as deleted in the
 OSM so that it won't be returned by either the `/messages` service or the
