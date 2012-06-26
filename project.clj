@@ -19,7 +19,7 @@
   :profiles {:dev {:resource-paths ["conf/test"]}}
   :extra-classpath-dirs ["conf/test"]
   :iplant-rpm {:summary "iPlant Notification Agent"
-               :release 4
+               :release 5
                :provides "notificationagent"
                :dependencies ["iplant-service-config >= 0.1.0-5"]
                :config-files ["log4j.properties"]
