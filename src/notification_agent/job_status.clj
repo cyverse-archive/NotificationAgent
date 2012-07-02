@@ -68,7 +68,6 @@
    :user (:user state)
    :deleted false
    :seen false
-   :workspaceId (:workspace_id state)
    :outputDir (:output_dir state)
    :outputManifest (:output_manifest state)
    :message {:id ""
