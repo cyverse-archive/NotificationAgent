@@ -270,6 +270,8 @@ notificationagent.osm-job-status-bucket=notificationagent_job_status
 notificationagent.email-url=http://snow-dog:65534
 notificationagent.enable-email=true
 notificationagent.email-template=analysis_status_change
+notificationagent.from-address=de@iplantcollaborative.org
+notificationagent.from-name=iPlant DE Status Alert
 
 # Notification recipients.
 notificationagent.recipients=
@@ -287,9 +289,11 @@ most recent status it has seen for each job.
 
 The e-mail configuration settings are all fairly self-explanatory except for
 the template, which is the name of the template that the e-mail service uses
-when generating the message text for job status updates.  In general, this
-setting will not change, but it has been made configurable in case we need to
-support different templates for different deployments.
+when generating the message text for job status updates, and the from-address 
+and from-name fields, which set the from email address and the name associated 
+with it in the notification email.  In general, the template, from-address, 
+and from-name settings will not change, but they have been made configurable 
+in case we need to support different templates for different deployments. 
 
 The `notificationagent.recipients` setting is a list of URLs to send
 notifications to when a job status update is processed.  This feature is
