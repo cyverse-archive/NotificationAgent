@@ -38,6 +38,8 @@
   {:to email
    :template (email-template)
    :subject (str (:name state) " status changed.")
+   :from-addr (email-from-address)
+   :from-name (email-from-name)
    :values {:analysisname (:name state)
             :analysisstatus (:status state)
             :analysisstartdate (unparse-epoch-string (:submission_date state))

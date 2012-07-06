@@ -47,6 +47,16 @@
   []
   (get @props "notificationagent.email-template"))
 
+(defn email-from-address
+  "Then from email address to use when sending e-mail notifications."
+  []
+  (get @props "notificationagent.from-address"))
+
+(defn email-from-name
+  "Then from name to use when sending e-mail notifications."
+  []
+  (get @props "notificationagent.from-name"))
+
 (defn notification-recipients
   "The list of URLs to send notifications to."
   []
