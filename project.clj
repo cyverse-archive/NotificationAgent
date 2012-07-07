@@ -1,4 +1,4 @@
-(defproject notificationagent "1.2.0-SNAPSHOT"
+(defproject notificationagent "1.3.0-SNAPSHOT"
   :description "Notification Agent v1.2.0"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/data.json "0.1.2"]
@@ -13,13 +13,12 @@
   :plugins [[lein-ring "0.6.4"]
             [swank-clojure "1.4.2"]
             [lein-marginalia "0.7.0"]
-            [org.iplantc/lein-iplant-rpm "1.2.1-SNAPSHOT"]]
+            [org.iplantc/lein-iplant-rpm "1.3.0-SNAPSHOT"]]
   :ring {:handler notification-agent.core/app
          :init notification-agent.core/load-configuration}
   :profiles {:dev {:resource-paths ["conf/test"]}}
   :extra-classpath-dirs ["conf/test"]
   :iplant-rpm {:summary "iPlant Notification Agent"
-               :release 5
                :provides "notificationagent"
                :dependencies ["iplant-service-config >= 0.1.0-5"]
                :config-files ["log4j.properties"]
