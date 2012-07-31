@@ -71,7 +71,7 @@
                   :offset     0
                   :seen       false
                   :sort-field :timestamp
-                  :sort-dir   :desc}))
+                  :sort-dir   :asc}))
 
 (defn- required-string
   "Extracts a required string argument from the query-string map."
