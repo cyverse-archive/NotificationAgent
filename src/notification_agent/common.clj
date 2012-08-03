@@ -1,4 +1,5 @@
 (ns notification-agent.common
+  (:use [slingshot.slingshot :only [try+ throw+]])
   (:require [clojure.data.json :as json]
             [clojure.string :as string]
             [clojure.tools.logging :as log]
@@ -70,3 +71,14 @@
   "Validates an e-mail address."
   [addr]
   (and (not (nil? addr)) (re-matches #"^[^@ ]+@[^@ ]+$" addr)))
+
+(defn string->long
+  "Converts a string to a long integer."
+  [s code exception-info-map]
+  (try+
+   (Long/parseLong s)
+   (catch NumberFormatException e
+     (throw+
+      (merge {:type  :illegal-argument
+              :code  code}
+             exception-info-map)))))

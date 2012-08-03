@@ -87,13 +87,9 @@
   "Extracts a required long argument from the query-string map."
   [k m]
   (let [v (required-string k m)]
-    (try+
-     (Long/parseLong v)
-     (catch NumberFormatException e
-       (throw+ {:type  :illegal-argument
-                :code  ::invalid-long-integer-param
-                :param (name k)
-                :value v})))))
+    (string->long v ::invalid-long-integer-param
+                  {:param (name k)
+                   :value v})))
 
 (defn- as-keyword
   "Converts a string to a lower-case keyword."

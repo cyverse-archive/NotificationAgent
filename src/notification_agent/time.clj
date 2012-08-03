@@ -1,6 +1,7 @@
 (ns notification-agent.time
  (:use [clj-time.core :only (default-time-zone now)]
-       [clj-time.format :only (formatter parse unparse)])
+       [clj-time.format :only (formatter parse unparse)]
+       [notification-agent.common :only [string->long]])
  (:require [clojure.string :as string])
  (:import [org.joda.time DateTimeZone]
           [org.joda.time.format DateTimeFormatterBuilder DateTimeParser]))
@@ -40,10 +41,13 @@
   (unparse date-formatter (now)))
 
 (defn unparse-epoch-string
-  "Parses a long containing the seconds since the epoch.
-   Returns a string containing a formatted date."
-  [epoch-long]
-  (let [epoch-dt (org.joda.time.DateTime. epoch-long)]
+  "Parses a string or long containing the seconds since the epoch.  Returns a
+   string containing a formatted date."
+  [epoch-string]
+  (let [epoch-string (str epoch-string)
+        epoch-long   (string->long epoch-string ::invalid-epoch-string
+                                   {:epoch-string epoch-string})
+        epoch-dt     (org.joda.time.DateTime. epoch-long)]
     (unparse date-formatter epoch-dt)))
 
 (defn parse-timestamp
