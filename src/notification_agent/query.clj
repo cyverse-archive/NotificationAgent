@@ -54,12 +54,53 @@
     {:total    msg-count
      :messages messages}))
 
+(defn- count-messages*
+  "Counts the number of matching messages in the OSM."
+  [query]
+  (let [results (query-osm query)
+        body    (extract-messages query results)]
+    (json-resp 200 (json/json-str (select-keys body [:total])))))
+
 (defn- get-messages*
   "Retrieves notification messages from the OSM."
   [query]
   (let [results (query-osm query)
         body    (extract-messages query results)]
     (json-resp 200 (json/json-str body))))
+
+(defn- required-string
+  "Extracts a required string argument from the query-string map."
+  [k m]
+  (let [v (m k)]
+    (when (blank? v)
+      (throw+ {:type  :illegal-argument
+               :code  ::missing-or-empty-param
+               :param (name k)}))
+    v))
+
+(defn- optional-long
+  "Extracts an optional long argument from the query-string map, using a default
+   value if the argument wasn't provided."
+  [k m d]
+  (let [v (k m)]
+    (if-not (nil? v)
+      (string->long v ::invalid-long-integer-param
+                    {:param (name k)
+                     :value v})
+      d)))
+
+(defn- optional-boolean
+  "Extracts an optional Boolean argument from the query-string map."
+  ([k m]
+     (optional-boolean k m nil))
+  ([k m d]
+     (let [v (k m)]
+       (if (nil? v) d (Boolean/valueOf v)))))
+
+(defn- as-keyword
+  "Converts a string to a lower-case keyword."
+  [s]
+  (keyword (lower-case s)))
 
 (defn get-unseen-messages
   "Looks up all messages in the OSM that have not been seen yet for a specified
@@ -73,47 +114,42 @@
                   :sort-field :timestamp
                   :sort-dir   :asc}))
 
-(defn- required-string
-  "Extracts a required string argument from the query-string map."
-  [k m]
-  (let [v (m k)]
-    (when (blank? v)
-      (throw+ {:type  :illegal-argument
-               :code  ::missing-or-empty-param
-               :param (name k)}))
-    v))
-
-(defn- required-long
-  "Extracts a required long argument from the query-string map."
-  [k m]
-  (let [v (required-string k m)]
-    (string->long v ::invalid-long-integer-param
-                  {:param (name k)
-                   :value v})))
-
-(defn- as-keyword
-  "Converts a string to a lower-case keyword."
-  [s]
-  (keyword (lower-case s)))
-
 (defn get-paginated-messages
   "Provides a paginated view for notification messages.  This endpoint takes
    several query-string parameters:
 
        user      - the name of the user to get notifications for
-       limit     - the maximum number of messages to return
-       offset    - the number of leading messages to skip
+       limit     - the maximum number of messages to return or zero if there is
+                   no limit - optional (0)
+       offset    - the number of leading messages to skip - optional (0)
        sortField - the field to use when sorting the messages - optional
                    (currently, only 'timestamp' can be used)
        sortDir   - the sort direction, 'asc' or 'desc' - optional (desc)
-       filter    - filter by message type ('data', 'analysis', etc.)
-
-   The limit and offset are the only fields that are currently required."
+       filter    - filter by message type ('data', 'analysis', etc.)"
   [query-params]
   (let [query {:user       (required-string :user query-params)
-               :limit      (required-long :limit query-params)
-               :offset     (required-long :offset query-params)
+               :limit      (optional-long :limit query-params 0)
+               :offset     (optional-long :offset query-params 0)
                :sort-field (as-keyword (:sortField query-params "timestamp"))
                :sort-dir   (as-keyword (:sortDir query-params "desc"))
                :filter     (:filter query-params)}]
     (get-messages* query)))
+
+(defn count-messages
+  "Provides a way to retrieve the number of messages that match a set of
+   criteria.  This endpoint takes several query-string parameters:
+
+       user      - the name of the user to count notifications for
+       seen      - specify 'true' for only seen messages or 'false' for only
+                   unseen messages - optional (defaults to counting both seen
+                   and unseen messages)
+       filter    - filter by message type ('data', 'analysis', etc.)"
+  [query-params]
+  (let [query {:user       (required-string :user query-params)
+               :limit      1
+               :offset     0
+               :seen       (optional-boolean :seen query-params)
+               :sort-field :timestamp
+               :sort-dir   :desc
+               :filter     (:filter query-params)}]
+    (count-messages* query)))

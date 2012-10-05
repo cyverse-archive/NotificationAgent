@@ -56,6 +56,11 @@
   [query]
   (trap #(get-paginated-messages query)))
 
+(defn- count-msgs
+  "Handles a request to count messages."
+  [query]
+  (trap #(count-messages query)))
+
 (defn- mark-seen
   "Handles a request to mark one or messages as seen."
   [body]
@@ -69,6 +74,7 @@
   (POST "/seen" [:as {body :body}] (mark-seen body))
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))
   (GET  "/messages" [:as {params :params}] (messages params))
+  (GET  "/count-messages" [:as {params :params}] (count-msgs params))
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]
