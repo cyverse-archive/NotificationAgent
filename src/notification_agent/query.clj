@@ -38,21 +38,20 @@
         sort-field (:sort-field query)
         sort-dir   (:sort-dir query)
         messages   (:objects results)
-        messages   (sort-messages messages sort-field sort-dir)
         msg-count  (count messages)
+        messages   (sort-messages messages sort-field sort-dir)
         messages   (if (> offset 0) (drop offset messages) messages)
         messages   (if (> limit 0) (take limit messages) messages)
         reformat   #(reformat-message (:object_persistence_uuid %) (:state %))
         messages   (map reformat messages)]
-    {:total    msg-count
+    {:total    (str msg-count)
      :messages messages}))
 
 (defn- count-messages*
   "Counts the number of matching messages in the OSM."
   [query]
-  (let [results (query-osm query)
-        body    (extract-messages query results)]
-    (json-resp 200 (json/json-str (select-keys body [:total])))))
+  (let [results (query-osm query)]
+    (json-resp 200 (json/json-str {:total (str (count (:objects results)))}))))
 
 (defn- get-messages*
   "Retrieves notification messages from the OSM."
@@ -143,10 +142,6 @@
        filter    - filter by message type ('data', 'analysis', etc.)"
   [query-params]
   (let [query {:user       (required-string :user query-params)
-               :limit      1
-               :offset     0
                :seen       (optional-boolean :seen query-params)
-               :sort-field :timestamp
-               :sort-dir   :desc
                :filter     (:filter query-params)}]
     (count-messages* query)))
