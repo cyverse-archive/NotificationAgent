@@ -122,6 +122,9 @@
        limit     - the maximum number of messages to return or zero if there is
                    no limit - optional (0)
        offset    - the number of leading messages to skip - optional (0)
+       seen      - specify 'true' for only seen messages or 'false' for only
+                   unseen messages - optional (defaults to displaying both seen
+                   and unseen messages)
        sortField - the field to use when sorting the messages - optional
                    (currently, only 'timestamp' can be used)
        sortDir   - the sort direction, 'asc' or 'desc' - optional (desc)
@@ -130,6 +133,7 @@
   (let [query {:user       (required-string :user query-params)
                :limit      (optional-long :limit query-params 0)
                :offset     (optional-long :offset query-params 0)
+               :seen       (optional-boolean :seen query-params)
                :sort-field (as-keyword (:sortField query-params "timestamp"))
                :sort-dir   (as-keyword (:sortDir query-params "desc"))
                :filter     (:filter query-params)}]
