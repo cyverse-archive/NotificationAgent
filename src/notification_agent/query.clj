@@ -13,10 +13,11 @@
 (defn- format-query
   "Formats the query to be sent to the OSM."
   [query]
-  (let [osm-query {:state.user (:user query) :state.deleted false}]
-    (if (nil? (:seen query))
-      osm-query
-      (assoc osm-query :state.seen (:seen query)))))
+  (into {} (remove (comp nil? val)
+                   {:state.user    (:user query)
+                    :state.deleted false
+                    :state.seen    (:seen query)
+                    :state.type    (:filter query)})))
 
 (defn- query-osm
   "Queries the OSM for the messages that the caller wants to see."
@@ -25,13 +26,6 @@
   (let [result (osm/query (notifications-osm) (format-query query))
         obj (na-json/read-json result)]
     obj))
-
-(defn- filter-by-type
-  "Filters messages by type."
-  [type messages]
-  (if (blank? type)
-    messages
-    (filter #(= type (get-in % [:state :type])) messages)))
 
 (defn- extract-messages
   "Extracts at most limit notification messages from objects returned by the
@@ -44,7 +38,6 @@
         sort-field (:sort-field query)
         sort-dir   (:sort-dir query)
         messages   (:objects results)
-        messages   (filter-by-type (:filter query) messages)
         messages   (sort-messages messages sort-field sort-dir)
         msg-count  (count messages)
         messages   (if (> offset 0) (drop offset messages) messages)
