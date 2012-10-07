@@ -530,13 +530,30 @@ query string.  The full list of query string parameters for this endpoint is:
         </tr>
         <tr>
             <td>limit</td>
-            <td>The maximum number of notifications to return at a time.</td>
-            <td>Required</td>
+            <td>
+                The maximum number of notifications to return at a time or `0`
+                if there is no limit.
+            </td>
+            <td>Optional (defaults to `0`)</td>
         </tr>
         <tr>
             <td>offset</td>
             <td>The index of the starting message.</td>
-            <td>Required</td>
+            <td>Optional (defaults to `0`)</td>
+        </tr>
+        <tr>
+            <td>seen</td>
+            <td>
+                Indicates whether messages that the user has seen, messages that
+                the user has not seen, or both should be returned.  If the value
+                of this parameter is set to `true` then only messages that the
+                user has seen will be returned.  If the value of this parameter
+                is `false` then only messages that the user has not seen will be
+                returned.  If the this parameter is not specified at all then
+                both messages that the user has seen and messages that the user
+                has not seen will be returned.
+            </td>
+            <td>Optional</td>
         </tr>
         <tr>
             <td>sortField</td>
@@ -552,7 +569,7 @@ query string.  The full list of query string parameters for this endpoint is:
                 The sorting direction, which can be `asc` (ascending) or `desc`
                 (descending).
             </td>
-            <td>Optional (defaults to `des`)</td>
+            <td>Optional (defaults to `desc`)</td>
         </tr>
         <tr>
             <td>filter</td>
@@ -608,7 +625,7 @@ $ curl -s 'http://by-tor:65533/messages?user=ipctest&limit=1&offset=0' | python 
             "workspaceId": "39"
         }
     ], 
-    "total": 256
+    "total": "256"
 }
 ```
 
@@ -616,9 +633,96 @@ $ curl -s 'http://by-tor:65533/messages?user=ipctest&limit=1&offset=0' | python 
 $ curl -s 'http://by-tor:65533/unseen-messages?user=ipctest' | python -mjson.tool
 {
     "messages": [], 
-    "total": 0
+    "total": "0"
 }
 ```
+
+### Counting Notifications
+
+* Endpoint: GET /count-messages
+
+In some cases, it's useful to be able to obtain the number of messages that
+match a set of criteria without retrieving the messages themselves.  This
+endpoint is provided for this purpose.
+
+This endpoint takes three query-string parameters:
+
+<table>
+    <thead>
+        <tr><th>Name</th><th>Description</th><th>Required/Optional</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>user</td>
+            <td>The name of the user to retrieve notifications for.</td>
+            <td>Required</td>
+        </tr>
+        <tr>
+            <td>seen</td>
+            <td>
+                Indicates whether messages that the user has seen, messages that
+                the user has not seen, or both should be returned.  If the value
+                of this parameter is set to `true` then only messages that the
+                user has seen will be returned.  If the value of this parameter
+                is `false` then only messages that the user has not seen will be
+                returned.  If the this parameter is not specified at all then
+                both messages that the user has seen and messages that the user
+                has not seen will be returned.
+            </td>
+            <td>Optional</td>
+        </tr>
+        <tr>
+            <td>filter</td>
+            <td>
+                Specifies the type of notification messages to return, which
+                can be `data`, `analysis` or `tool`.  Other types of
+                notifications may be added in the future.  If this parameter
+                it not specified then all types of notifications will be
+                returned.
+            </td>
+            <td>Optional</td>
+        </tr>
+    </tbody>
+</table>
+
+The response body consists of a JSON object with a single field, `total`, that
+contains the number of messages that match the criteria specified in the query
+string:
+
+```json
+{
+    "total": message-count
+}
+```
+
+Here are some examples:
+
+```
+$ curl -s "http://by-tor:65533/count-messages?user=ipctest" | python -mjson.tool
+{
+    "total": "409"
+}
+```
+
+In this example, all messages for the user, `ipctest`, are counted.
+
+```
+$ curl -s "http://by-tor:65533/count-messages?user=ipctest&filter=data" | python -mjson.tool
+{
+    "total": "91"
+}
+```
+
+In this example, all data messages for the user, `ipctest`, are counted.
+
+```
+$ curl -s "http://services-2:31320/count-messages?user=ipctest&filter=data&seen=false" | python -mjson.tool
+{
+    "total": "0"
+}
+```
+
+In this example, only unseen data messages for the uer, `ipctest`, are counted.
 
 ### Marking Notifications as Seen
 
