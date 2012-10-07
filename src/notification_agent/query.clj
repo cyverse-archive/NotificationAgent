@@ -47,11 +47,19 @@
     {:total    (str msg-count)
      :messages messages}))
 
+(defn- count-matching-messages
+  "Sends a request to the OSM to count messages matching a query."
+  [query]
+  (log/debug "sending a request to count messages to the OSM:" query)
+  (let [result (osm/count-documents (notifications-osm) (format-query query))
+        obj    (na-json/read-json result)]
+    (:count obj)))
+
 (defn- count-messages*
   "Counts the number of matching messages in the OSM."
   [query]
-  (let [results (query-osm query)]
-    (json-resp 200 (json/json-str {:total (str (count (:objects results)))}))))
+  (let [total (count-matching-messages query)]
+    (json-resp 200 (json/json-str {:total (str total)}))))
 
 (defn- get-messages*
   "Retrieves notification messages from the OSM."

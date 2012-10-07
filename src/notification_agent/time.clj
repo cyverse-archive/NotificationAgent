@@ -11,14 +11,6 @@
     :doc "The formats that we support for incoming timestamps"}
   ["EEE MMM dd YYYY HH:mm:ss 'GMT'Z" "YYYY MMM dd HH:mm:ss"])
 
-(defn- multi-parser
-  "Creates a formatter that can parse multiple date/time formats."
-  [#^DateTimeZone dtz fmt & more]
-  (let [parsers (map #(.getParser (formatter % dtz)) (cons fmt more))]
-    (-> (DateTimeFormatterBuilder.)
-      (.append nil (into-array DateTimeParser parsers))
-      (.toFormatter))))
-
 (def date-formatter
   ^{:private true
     :doc "The date formatter that is used to format all timestamps."}
@@ -27,7 +19,7 @@
 (def date-parser
   ^{:private true
     :doc "The date formatter that is used to parse all timestamps."}
-  (apply multi-parser (default-time-zone) accepted-timestamp-formats))
+  (apply formatter (default-time-zone) accepted-timestamp-formats))
 
 (defn- strip-zone-name
   "Strips the time zone name from a timestamp."
