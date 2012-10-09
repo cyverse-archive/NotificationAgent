@@ -1,6 +1,7 @@
 (ns notification-agent.seen
   (:use [notification-agent.common]
         [notification-agent.config]
+        [notification-agent.search :only [count-matching-messages]]
         [slingshot.slingshot :only [throw+ try+]])
   (:require [clojure.data.json :as json]
             [clojure-commons.osm :as osm]
@@ -27,16 +28,34 @@
      (log/error e "unexpected exception")
      (throw+))))
 
+(defn- validate-user
+  "Validates the username that was passed in."
+  [user]
+  (when (nil? user)
+    (throw+ {:type   :illegal-argument
+             :code   ::no-username-specified
+             :param  "user"})))
+
+(defn- validate-uuids
+  "Validates the list of UUIDs that was passed in."
+  [uuids body]
+  (when (empty? uuids)
+    (throw+ {:type  :illegal-argument
+             :code  ::no-identifiers-in-request
+             :param "uuids"
+             :value body})))
+
 (defn mark-messages-seen
   "Marks one or more notification messages as seen."
-  [body]
+  [body {:keys [user]}]
+  (validate-user user)
   (let [uuids (:uuids (na-json/read-json body))]
-    (when (nil? uuids)
-      (throw+ {:type  :illegal-argument
-               :code  ::no-identifiers-in-request
-               :param "uuids"
-               :value body}))
-    (dorun (map update-seen-flag
-                (filter (comp not nil?)
-                        (map get-notification uuids))))
-    (success-resp)))
+    (validate-uuids uuids body)
+    (dorun
+     (->> uuids
+          (map get-notification)
+          (remove nil?)
+          (map update-seen-flag)))
+    (success-resp {:count (str (count-matching-messages
+                                {:user user
+                                 :seen false}))})))

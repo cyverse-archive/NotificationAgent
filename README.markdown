@@ -744,12 +744,13 @@ accepts a request body in the following format:
 ```
 
 If this service succeeds, it returns a 200 status code with a simple JSON
-response body indicating that the service call suceeded.  Otherwise, it
-returns either a 400 or a 500 status code with a brief description of the
-error.  An attempt to mark a non-existent message as seen does not cause the
-service call to fail, but a warning message will be logged in the notification
-agent's log file.  An attempt to mark a message that has already been marked
-as seen is silently ignored.  Here's an example:
+response body indicating that the service call suceeded along with the number of
+messages that are still marked as unseen.  Otherwise, it returns either a 400 or
+a 500 status code with a brief description of the error.  An attempt to mark a
+non-existent message as seen does not cause the service call to fail, but a
+warning message will be logged in the notification agent's log file.  An attempt
+to mark a message that has already been marked as seen is silently ignored.
+Here's an example:
 
 ```
 $ curl -sd '
@@ -760,7 +761,8 @@ $ curl -sd '
 }
 ' http://services-2:31320/seen | python -mjson.tool
 {
-    "success": true
+    "success": true,
+    "count": 0
 }
 ```
 

@@ -16,10 +16,12 @@
 
 (defn success-resp
   "Returns an empty success response."
-  []
-  {:status       200
-   :body         (json/json-str {:success true})
-   :content-type :json})
+  ([]
+     (success-resp {}))
+  ([m]
+     {:status       200
+      :body         (json/json-str (assoc m :success true))
+      :content-type :json}))
 
 (defn json-resp
   "Returns a value that Ring can use to generate a JSON response."

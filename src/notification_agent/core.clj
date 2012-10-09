@@ -63,15 +63,15 @@
 
 (defn- mark-seen
   "Handles a request to mark one or messages as seen."
-  [body]
-  (trap #(mark-messages-seen body)))
+  [body params]
+  (trap #(mark-messages-seen body params)))
 
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
   (POST "/notification" [:as {body :body}] (notification body))
   (POST "/delete" [:as {body :body}] (delete body))
-  (POST "/seen" [:as {body :body}] (mark-seen body))
+  (POST "/seen" [:as {body :body params :params}] (mark-seen body params))
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))
   (GET  "/messages" [:as {params :params}] (messages params))
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))
