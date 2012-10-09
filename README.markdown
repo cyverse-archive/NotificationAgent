@@ -689,7 +689,7 @@ The response body consists of a JSON object with a single field, `total`, that
 contains the number of messages that match the criteria specified in the query
 string:
 
-```json
+```
 {
     "total": message-count
 }
