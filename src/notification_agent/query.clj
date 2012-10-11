@@ -1,6 +1,7 @@
 (ns notification-agent.query
  (:use [notification-agent.common]
        [notification-agent.config]
+       [notification-agent.messages :only [sort-messages]]
        [notification-agent.search]
        [clojure.string :only [blank? lower-case]]
        [slingshot.slingshot :only [throw+]])
@@ -105,3 +106,18 @@
                :seen       (optional-boolean :seen query-params)
                :filter     (:filter query-params)}]
     (count-messages* query)))
+
+(defn last-ten-messages
+  "Obtains the ten most recent notifications for the user in ascending order."
+  [query-params]
+  (let [query   {:user       (required-string :user query-params)
+                 :limit      10
+                 :offset     0
+                 :sort-field :timestamp
+                 :sort-dir   :desc}
+        results (query-osm query)
+        body    (extract-messages query results)
+        msgs    (:messages body)
+        key-fn  #(get-in % [:message :timestamp])
+        body    (assoc body :messages (sort-by key-fn msgs))]
+    (json-resp 200 (json/json-str body))))

@@ -637,6 +637,33 @@ $ curl -s 'http://by-tor:65533/unseen-messages?user=ipctest' | python -mjson.too
 }
 ```
 
+### Getting the Ten Most Recent Notifications
+
+* Endpoint: GET /last-ten-messages
+
+This endpoint takes the username as its only query-string parameter and returns
+the ten most recent messages for that username in ascending order by message
+timestamp.  Obtaining the ten most recent messages in ascending order is
+difficult using other endpoints.
+
+this endpoint takes one query-string parameter:
+
+<table>
+    <thead>
+        <tr><th>Name</th><th>Description</th><th>Required/Optional</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>user</td>
+            <td>The name of the user to retrieve notifications for.</td>
+            <td>Required</td>
+        </tr>
+    </tbody>
+</table>
+
+Examples are omitted for this endpoint because the response body is identical to
+that of the /messages and /unseen-messages endpoints.
+
 ### Counting Notifications
 
 * Endpoint: GET /count-messages

@@ -61,6 +61,11 @@
   [query]
   (trap #(count-messages query)))
 
+(defn- last-ten
+  "Handles a request to get the most recent ten messages."
+  [query]
+  (trap #(last-ten-messages query)))
+
 (defn- mark-seen
   "Handles a request to mark one or messages as seen."
   [body params]
@@ -75,6 +80,7 @@
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))
   (GET  "/messages" [:as {params :params}] (messages params))
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))
+  (GET  "/last-ten-messages" [:as {params :params}] (last-ten params))
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]
