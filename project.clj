@@ -15,7 +15,7 @@
             [lein-marginalia "0.7.0"]
             [org.iplantc/lein-iplant-rpm "1.4.0-SNAPSHOT"]]
   :ring {:handler notification-agent.core/app
-         :init notification-agent.core/load-configuration}
+         :init notification-agent.core/load-configuration-from-file}
   :profiles {:dev {:resource-paths ["conf/test"]}}
   :extra-classpath-dirs ["conf/test"]
   :iplant-rpm {:summary "iPlant Notification Agent"

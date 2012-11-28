@@ -1,6 +1,7 @@
 (ns notification-agent.core
   (:gen-class)
-  (:use [clojure-commons.query-params :only (wrap-query-params)]
+  (:use [clojure.java.io :only [file]]
+        [clojure-commons.query-params :only (wrap-query-params)]
         [compojure.core]
         [ring.middleware keyword-params nested-params]
         [notification-agent.common]
@@ -92,6 +93,22 @@
 (def app
   (site-handler notificationagent-routes))
 
+(defn- log-props
+  "Logs the configuration properties."
+  []
+  (dorun (map #(log/warn (key %) "=" (val %))
+              (sort-by key @props))))
+
+(defn load-configuration-from-file
+  "Loads the configuration properties from a file."
+  []
+  (let [filename "notificationagent.properties"
+        conf-dir (System/getenv "IPLANT_CONF_DIR")]
+    (if (nil? conf-dir)
+      (reset! props (cc-props/read-properties (file filename)))
+      (reset! props (cc-props/read-properties (file conf-dir filename)))))
+  (log-props))
+
 (defn- load-configuration
   "Loads the configuration from Zookeeper."
   []
@@ -104,7 +121,7 @@
       (log/warn "THIS APPLICATION WILL NOT EXECUTE CORRECTLY.")
       (System/exit 1))
     (reset! props (cl/properties "notificationagent"))
-    (log/warn @props)))
+    (log-props)))
 
 (defn -main
   [& args]
