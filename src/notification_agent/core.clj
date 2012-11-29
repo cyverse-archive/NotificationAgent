@@ -49,8 +49,8 @@
 
 (defn- delete-all
   "Handles a request to delete all messages for a user."
-  [body]
-  (trap #(delete-all-messages body)))
+  [params]
+  (trap #(delete-all-messages params)))
 
 (defn- unseen-messages
   "Handles a query for unseen messages."
@@ -87,7 +87,7 @@
   (POST "/job-status" [:as {body :body}] (job-status body))
   (POST "/notification" [:as {body :body}] (notification body))
   (POST "/delete" [:as {body :body}] (delete body))
-  (POST "/delete-all" [:as {body :body}] (delete-all body))
+  (DELETE "/delete-all" [:as {params :params}] (delete-all params))
   (POST "/seen" [:as {body :body params :params}] (mark-seen body params))
   (POST "/mark-all-seen" [:as {body :body}] (mark-all-seen body))
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))

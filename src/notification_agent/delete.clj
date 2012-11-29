@@ -71,10 +71,9 @@
   "Handles a messages deletion request.  The request body should consist of
    a JSON object containing the user name and any other osm query filters to
    delete matching messages."
-  [body]
+  [request]
   (log/debug "handling a notification delete all request")
-  (let [request (parse-body body)
-        user (validate-user (:user request))]
+  (let [user (validate-user (:user request))]
     (log/debug "deleting notifications for" user)
     (delete-all-messages* request)
     (success-resp {:count (str (count-matching-messages
