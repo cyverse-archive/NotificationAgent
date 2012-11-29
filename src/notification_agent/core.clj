@@ -47,6 +47,11 @@
   [body]
   (trap #(delete-messages body)))
 
+(defn- delete-all
+  "Handles a request to delete all messages for a user."
+  [body]
+  (trap #(delete-all-messages body)))
+
 (defn- unseen-messages
   "Handles a query for unseen messages."
   [query]
@@ -72,14 +77,19 @@
   [body params]
   (trap #(mark-messages-seen body params)))
 
+(defn- mark-all-seen
+  "Handles a request to mark all messages for a user as seen."
+  [body]
+  (trap #(mark-all-messages-seen body)))
+
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
   (POST "/notification" [:as {body :body}] (notification body))
   (POST "/delete" [:as {body :body}] (delete body))
-  (POST "/delete-all" [:as {body :body}] (delete-all-messages body))
+  (POST "/delete-all" [:as {body :body}] (delete-all body))
   (POST "/seen" [:as {body :body params :params}] (mark-seen body params))
-  (POST "/mark-all-seen" [:as {body :body}] (mark-all-messages-seen body))
+  (POST "/mark-all-seen" [:as {body :body}] (mark-all-seen body))
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))
   (GET  "/messages" [:as {params :params}] (messages params))
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))
