@@ -14,6 +14,15 @@
     (catch Throwable t
       (throw (IllegalArgumentException. (str "invalid request body: " t))))))
 
+(defn validate-user
+  "Validates the username that was passed in. Returns the username when valid."
+  [user]
+  (when (nil? user)
+    (throw+ {:type   :illegal-argument
+             :code   ::no-username-specified
+             :param  "user"}))
+  user)
+
 (defn success-resp
   "Returns an empty success response."
   ([]

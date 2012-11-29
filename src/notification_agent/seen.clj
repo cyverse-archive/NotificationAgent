@@ -28,14 +28,6 @@
      (log/error e "unexpected exception")
      (throw+))))
 
-(defn- validate-user
-  "Validates the username that was passed in."
-  [user]
-  (when (nil? user)
-    (throw+ {:type   :illegal-argument
-             :code   ::no-username-specified
-             :param  "user"})))
-
 (defn- validate-uuids
   "Validates the list of UUIDs that was passed in."
   [uuids body]
