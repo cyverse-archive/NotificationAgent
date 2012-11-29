@@ -79,6 +79,7 @@
   (POST "/delete" [:as {body :body}] (delete body))
   (POST "/delete-all" [:as {body :body}] (delete-all-messages body))
   (POST "/seen" [:as {body :body params :params}] (mark-seen body params))
+  (POST "/mark-all-seen" [:as {body :body}] (mark-all-messages-seen body))
   (GET  "/unseen-messages" [:as {params :params}] (unseen-messages params))
   (GET  "/messages" [:as {params :params}] (messages params))
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))

@@ -1,7 +1,7 @@
 (ns notification-agent.seen
   (:use [notification-agent.common]
         [notification-agent.config]
-        [notification-agent.search :only [count-matching-messages]]
+        [notification-agent.search :only [count-matching-messages query-osm]]
         [slingshot.slingshot :only [throw+ try+]])
   (:require [clojure.data.json :as json]
             [clojure-commons.osm :as osm]
@@ -51,3 +51,18 @@
     (success-resp {:count (str (count-matching-messages
                                 {:user user
                                  :seen false}))})))
+
+(defn mark-all-messages-seen
+  "Marks all notification messages as seen."
+  [body]
+  (let [request (parse-body body)
+        user (validate-user (:user request))
+        msgs (query-osm (assoc request :seen false))]
+    (dorun
+      (->> msgs
+        (:objects)
+        (remove nil?)
+        (map update-seen-flag)))
+    (success-resp {:count (str (count-matching-messages
+                                 {:user user
+                                  :seen false}))})))
