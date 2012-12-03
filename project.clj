@@ -4,7 +4,7 @@
                  [org.clojure/data.json "0.1.2"]
                  [org.clojure/tools.logging "0.2.3"]
                  [compojure "1.0.2"]
-                 [org.iplantc/clojure-commons "1.2.2-SNAPSHOT"]
+                 [org.iplantc/clojure-commons "1.3.1-SNAPSHOT"]
                  [clj-http "0.5.5"]
                  [clj-time "0.4.4"]
                  [ring/ring-jetty-adapter "1.1.0"]

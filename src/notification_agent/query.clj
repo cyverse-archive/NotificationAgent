@@ -87,8 +87,8 @@
                :limit      (optional-long :limit query-params 0)
                :offset     (optional-long :offset query-params 0)
                :seen       (optional-boolean :seen query-params)
-               :sort-field (as-keyword (:sortField query-params "timestamp"))
-               :sort-dir   (as-keyword (:sortDir query-params "desc"))
+               :sort-field (as-keyword (:sortfield query-params "timestamp"))
+               :sort-dir   (as-keyword (:sortdir query-params "desc"))
                :filter     (:filter query-params)}]
     (get-messages* query)))
 
