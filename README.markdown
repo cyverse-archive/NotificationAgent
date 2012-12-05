@@ -871,6 +871,29 @@ $ curl -sd '
 }
 ```
 
+### Deleting All Notifications
+
+* Endpoint: DELETE /delete-all
+
+This endpoint allows the client to delete all notifications for a particular
+user.  This service accepts query parameters similar to the fields accepted by
+the /notification endpoint. The only required parameter is the "user" parameter,
+and any additional parameters will only delete notifications that match those
+parameters.
+
+If this service succeeds it returns a 200 status code with a simple JSON
+response body indicating that the service call succeeded.  Otherwise, it
+returns either a 400 status code or a 500 status code with a brief description
+of the error.  Here's an example:
+
+```
+$ curl -s 'http://by-tor:65533/delete-all?user=some_user_name' | python -mjson.tool
+{
+    "success": true,
+    "count": 0
+}
+```
+
 ### Unrecognized Service Path
 
 If the notification agent doesn't recognize a service path then it will
