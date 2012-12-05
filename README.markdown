@@ -793,6 +793,42 @@ $ curl -sd '
 }
 ```
 
+### Marking All Notifications as Seen
+
+* Endpoint: POST /mark-all-seen
+
+This endpoint allows the client to acknowlege all notifications as seen for a
+particular user.  This service accepts a request body in a similar format as the
+/notification endpoint. The only required JSON field is the "user" field, and any
+additional fields will only mark notifications that match those fields as seen:
+
+```json
+{
+    "user": "some_user_name",
+    ...
+}
+```
+
+If this service succeeds, it returns a 200 status code with a simple JSON
+response body indicating that the service call suceeded along with the number of
+messages that are still marked as unseen.  Otherwise, it returns either a 400 or
+a 500 status code with a brief description of the error.  An attempt to mark all
+notifications seen for a non-existent user does not cause the service call to
+fail.
+Here's an example:
+
+```
+$ curl -sd '
+{
+    "user": "some_user_name"
+}
+' http://by-tor:65533/mark-all-seen | python -mjson.tool
+{
+    "success": true,
+    "count": 0
+}
+```
+
 ### Deleting Notifications
 
 * Endpoint: POST /delete
