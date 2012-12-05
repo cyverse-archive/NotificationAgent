@@ -433,7 +433,7 @@ curl -sd '
         "email_address": "nobody@iplantcollaborative.org"
     }
 }
-' http://services-2:31320/notification | python -mjson.tool
+' http://by-tor:65533/notification | python -mjson.tool
 {
     "success": true
 }
@@ -743,7 +743,7 @@ $ curl -s "http://by-tor:65533/count-messages?user=ipctest&filter=data" | python
 In this example, all data messages for the user, `ipctest`, are counted.
 
 ```
-$ curl -s "http://services-2:31320/count-messages?user=ipctest&filter=data&seen=false" | python -mjson.tool
+$ curl -s "http://by-tor:65533/count-messages?user=ipctest&filter=data&seen=false" | python -mjson.tool
 {
     "total": "0"
 }
@@ -786,7 +786,7 @@ $ curl -sd '
         "6DF4475F-EE81-4063-B457-6EDFA4ED9C5F"
     ]
 }
-' http://services-2:31320/seen | python -mjson.tool
+' http://by-tor:65533/seen | python -mjson.tool
 {
     "success": true,
     "count": 0
