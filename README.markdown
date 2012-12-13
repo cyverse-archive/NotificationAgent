@@ -887,7 +887,7 @@ returns either a 400 status code or a 500 status code with a brief description
 of the error.  Here's an example:
 
 ```
-$ curl -s 'http://by-tor:65533/delete-all?user=some_user_name' | python -mjson.tool
+$ curl -X DELETE -s 'http://by-tor:65533/delete-all?user=some_user_name' | python -mjson.tool
 {
     "success": true,
     "count": 0
