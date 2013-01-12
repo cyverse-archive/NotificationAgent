@@ -1,85 +1,123 @@
 (ns notification-agent.config
-  (:use [clojure.string :only (split)])
-  (:require [clojure-commons.osm :as osm]
-            [clojure.string :as string]))
+  (:use [slingshot.slingshot :only [throw+ try+]])
+  (:require [clojure-commons.config :as cc]
+            [clojure-commons.error-codes :as ce]
+            [clojure-commons.osm :as osm]))
 
-(def
-  ^{:doc "The name of the properties file."}
-  prop-file "notificationagent.properties")
+(def ^:private props
+  "A ref for storing the configuration properties."
+  (ref nil))
 
-(def props
-  ^{:doc "The properites that have been loaded from the properties file."}
-  (atom nil))
+(def ^:private config-valid
+  "A ref for storing a configuration validity flag."
+  (ref true))
 
-(defn osm-base
+(def ^:private configs
+  "A ref for storing the symbols used to get configuration settings."
+  (ref []))
+
+(cc/defprop-str db-driver-class
+  "The name of the JDBC driver to use."
+  [props config-valid configs]
+  "notificationagent.db.driver" )
+
+(cc/defprop-str db-subprotocol
+  "The subprotocol to use when connecting to the database (e.g. postgresql)."
+  [props config-valid configs]
+  "notificationagent.db.subprotocol")
+
+(cc/defprop-str db-host
+  "The host name or IP address to use when connecting to the database."
+  [props config-valid configs]
+  "notificationagent.db.host")
+
+(cc/defprop-str db-port
+  "The port number to use when connecting to the database."
+  [props config-valid configs]
+  "notificationagent.db.port")
+
+(cc/defprop-str db-name
+  "The name of the database to connect to."
+  [props config-valid configs]
+  "notificationagent.db.name")
+
+(cc/defprop-str db-user
+  "The username to use when authenticating to the database."
+  [props config-valid configs]
+  "notificationagent.db.user")
+
+(cc/defprop-str db-password
+  "The password to use when authenticating to the database."
+  [props config-valid configs]
+  "notificationagent.db.password")
+
+(cc/defprop-str osm-base
   "The base URL used to connect to the OSM."
-  []
-  (get @props "notificationagent.osm-base"))
+  [props config-valid configs]
+  "notificationagent.osm-base")
 
-(defn osm-jobs-bucket
+(cc/defprop-str osm-jobs-bucket
   "The OSM bucket containing job status information."
-  []
-  (get @props "notificationagent.osm-jobs-bucket"))
+  [props config-valid configs]
+  "notificationagent.osm-jobs-bucket")
 
-(defn osm-notifications-bucket
-  "The OSM bucket containing notifications."
-  []
-  (get @props "notificationagent.osm-notifications-bucket"))
-
-(defn osm-job-status-bucket
-  "The OSM bucket used to store the last status seen by the notification agent
-   for each job."
-  []
-  (get @props "notificationagent.osm-job-status-bucket"))
-
-(defn email-enabled
+(cc/defprop-boolean email-enabled
   "True if e-mail notifications are enabled."
-  []
-  (get @props "notificationagent.enable-email"))
+  [props config-valid configs]
+  "notificationagent.enable-email")
 
-(defn email-url
+(cc/defprop-str email-url
   "The URL used to connect to the mail service."
-  []
-  (get @props "notificationagent.email-url"))
+  [props config-valid configs]
+  "notificationagent.email-url")
 
-(defn email-template
+(cc/defprop-str email-template
   "The template to use when sending e-mail notifications."
-  []
-  (get @props "notificationagent.email-template"))
+  [props config-valid configs]
+  "notificationagent.email-template")
 
-(defn email-from-address
-  "Then from email address to use when sending e-mail notifications."
-  []
-  (get @props "notificationagent.from-address"))
+(cc/defprop-str email-from-address
+  "The source address to use when sending e-mail notifications."
+  [props config-valid configs]
+  "notificationagent.from-address")
 
-(defn email-from-name
-  "Then from name to use when sending e-mail notifications."
-  []
-  (get @props "notificationagent.from-name"))
+(cc/defprop-str email-from-name
+  "The source name to use when sending e-mail notifications."
+  [props config-valid configs]
+  "notificationagent.from-name")
 
-(defn notification-recipients
+(cc/defprop-optvec notification-recipients
   "The list of URLs to send notifications to."
-  []
-  (filter #(not (string/blank? %))
-    (split (get @props "notificationagent.recipients") #",")))
+  [props config-valid configs]
+  "notificationagent.notification-recipients")
 
-(defn listen-port
+(cc/defprop-int listen-port
   "The port to listen to for incoming connections."
-  []
-  (Integer/parseInt (get @props "notificationagent.listen-port")))
+  [props config-valid configs]
+  "notificationagent.listen-port")
 
 (defn jobs-osm
   "The OSM client instance used to retrieve job status information."
   []
   (osm/create (osm-base) (osm-jobs-bucket)))
 
-(defn notifications-osm
-  "The OSM client instance used to store and retrieve notifications."
+(defn- validate-config
+  "Validates the configuration settings after they've been loaded."
   []
-  (osm/create (osm-base) (osm-notifications-bucket)))
+  (when-not (cc/validate-config configs config-valid)
+    (throw+ {:error_code ce/ERR_CONFIG_INVALID})))
 
-(defn job-status-osm
-  "The OSM client instance used to store the most recent status seen by the
-   notification agent for each job."
+(defn load-config-from-file
+  "Loads the configuration settings from a file."
   []
-  (osm/create (osm-base) (osm-job-status-bucket)))
+  (cc/load-config-from-file
+   (System/getenv "IPLANT_CONF_DIR") "notificationagent.properties" props)
+  (cc/log-config props)
+  (validate-config))
+
+(defn load-config-from-zookeeper
+  "Loads the configuration settings from Zookeeper."
+  []
+  (cc/load-config-from-zookeeper props "notificationagent")
+  (cc/log-config props)
+  (validate-config))

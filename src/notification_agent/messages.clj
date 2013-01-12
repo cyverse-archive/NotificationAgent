@@ -48,7 +48,7 @@
   "Persists a message in the OSM."
   [msg]
   (log/debug "saving a message in the OSM:" msg)
-  (osm/save-object (notifications-osm) msg))
+  #_(osm/save-object (notifications-osm) msg))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."

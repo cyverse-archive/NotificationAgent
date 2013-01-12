@@ -97,9 +97,9 @@
 (defn- get-notification-status-object
   "Loads the notification status object for the job with the given UUID."
   [uuid]
-  (let [query {"state.id" uuid}
-        results (na-json/read-json (osm/query (job-status-osm) query))]
-    (first (:objects results))))
+  #_(let [query {"state.id" uuid}
+          results (na-json/read-json (osm/query (job-status-osm) query))]
+      (first (:objects results))))
 
 (defn- get-notification-status
   "Gets the status of the most recent notification associated with a job."
@@ -111,13 +111,13 @@
   "Stores the last status seen by the notification agent for a job in the job
    statuses bucket in the OSM."
   [{uuid :uuid status :status job-name :name}]
-  (let [status-obj (get-notification-status-object uuid)
-        new-state {:id uuid :status status}]
-    (log/info "updating the notification status for job" job-name)
-    (if (nil? status-obj)
-      (osm/save-object (job-status-osm) new-state)
-      (osm/update-object
-        (job-status-osm) (:object_persistence_uuid status-obj) new-state))))
+  #_(let [status-obj (get-notification-status-object uuid)
+          new-state {:id uuid :status status}]
+      (log/info "updating the notification status for job" job-name)
+      (if (nil? status-obj)
+        (osm/save-object (job-status-osm) new-state)
+        (osm/update-object
+         (job-status-osm) (:object_persistence_uuid status-obj) new-state))))
 
 (defn- handle-status-change
   "Handles a job with a status that has been changed since the job was last

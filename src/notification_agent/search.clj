@@ -18,9 +18,9 @@
   "Queries the OSM for the messages that the caller wants to see."
   [query]
   (log/debug "sending a query to the OSM:" query)
-  (let [result (osm/query (notifications-osm) (format-query query))
-        obj (na-json/read-json result)]
-    obj))
+  #_(let [result (osm/query (notifications-osm) (format-query query))
+          obj (na-json/read-json result)]
+      obj))
 
 (defn extract-messages
   "Extracts at most limit notification messages from objects returned by the
@@ -46,7 +46,6 @@
   "Sends a request to the OSM to count messages matching a query."
   [query]
   (log/debug "sending a request to count messages to the OSM:" query)
-  (let [result (osm/count-documents (notifications-osm) (format-query query))
-        obj    (na-json/read-json result)]
-    (:count obj)))
-
+  #_(let [result (osm/count-documents (notifications-osm) (format-query query))
+          obj    (na-json/read-json result)]
+      (:count obj)))

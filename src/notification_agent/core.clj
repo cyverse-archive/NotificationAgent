@@ -6,7 +6,6 @@
         [compojure.core]
         [ring.middleware keyword-params nested-params]
         [notification-agent.common]
-        [notification-agent.config]
         [notification-agent.delete]
         [notification-agent.job-status]
         [notification-agent.notifications]
@@ -16,8 +15,9 @@
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [clojure.tools.logging :as log]
-            [clojure-commons.props :as cc-props]
             [clojure-commons.clavin-client :as cl]
+            [notification-agent.config :as config]
+            [notification-agent.db :as db]
             [ring.adapter.jetty :as jetty]))
 
 (defn- trap
@@ -45,8 +45,8 @@
 
 (defn- delete
   "Handles a message deletion request."
-  [body]
-  (trap #(delete-messages body)))
+  [params body]
+  (trap #(delete-messages params body)))
 
 (defn- delete-all
   "Handles a request to delete all messages for a user."
@@ -87,7 +87,7 @@
   (GET  "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
   (POST "/notification" [:as {body :body}] (notification body))
-  (POST "/delete" [:as {body :body}] (delete body))
+  (POST "/delete" [:as {:keys [params body]}] (delete params body))
   (DELETE "/delete-all" [:as {params :params}] (delete-all params))
   (POST "/seen" [:as {body :body params :params}] (mark-seen body params))
   (POST "/mark-all-seen" [:as {body :body}] (mark-all-seen body))
@@ -106,39 +106,23 @@
 (def app
   (site-handler notificationagent-routes))
 
-(defn- log-props
-  "Logs the configuration properties."
+(defn- init-service
   []
-  (dorun (map #(log/warn (key %) "=" (val %))
-              (sort-by key @props))))
+  (db/define-database))
 
-(defn load-configuration-from-file
-  "Loads the configuration properties from a file."
+(defn- load-config-from-file
   []
-  (let [filename "notificationagent.properties"
-        conf-dir (System/getenv "IPLANT_CONF_DIR")]
-    (if (nil? conf-dir)
-      (reset! props (cc-props/read-properties (file filename)))
-      (reset! props (cc-props/read-properties (file conf-dir filename)))))
-  (log-props))
+  (config/load-config-from-file)
+  (init-service))
 
-(defn- load-configuration
-  "Loads the configuration from Zookeeper."
+(defn- load-config-from-zookeeper
   []
-  (def zkprops (cc-props/parse-properties "zkhosts.properties"))
-  (def zkurl (get zkprops "zookeeper"))
-  (cl/with-zk
-    zkurl
-    (when (not (cl/can-run?))
-      (log/warn "THIS APPLICATION CANNOT RUN ON THIS MACHINE. SO SAYETH ZOOKEEPER.")
-      (log/warn "THIS APPLICATION WILL NOT EXECUTE CORRECTLY.")
-      (System/exit 1))
-    (reset! props (cl/properties "notificationagent"))
-    (log-props)))
+  (config/load-config-from-zookeeper)
+  (init-service))
 
 (defn -main
   [& args]
-  (load-configuration)
+  (load-config-from-zookeeper)
   (initialize-job-status-service)
-  (log/warn "Listening on" (listen-port))
-  (jetty/run-jetty (site-handler notificationagent-routes) {:port (listen-port)}))
+  (log/warn "Listening on" (config/listen-port))
+  (jetty/run-jetty (site-handler notificationagent-routes) {:port (config/listen-port)}))
