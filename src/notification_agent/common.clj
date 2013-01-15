@@ -3,6 +3,7 @@
   (:require [clojure.data.json :as json]
             [clojure.string :as string]
             [clojure.tools.logging :as log]
+            [clojure-commons.error-codes :as ce]
             [clojure-commons.json :as cc-json]))
 
 (defn parse-body
@@ -18,9 +19,8 @@
   "Validates the username that was passed in. Returns the username when valid."
   [user]
   (when (nil? user)
-    (throw+ {:type   :illegal-argument
-             :code   ::no-username-specified
-             :param  "user"}))
+    (throw+ {:error_code ce/ERR_ILLEGAL_ARGUMENT
+             :param      :user}))
   user)
 
 (defn success-resp
@@ -40,44 +40,6 @@
    :body         body
    :content-type :json})
 
-(defn illegal-argument-resp
-  "Produces a response indicating that an illegal argument was passed as a
-   parameter."
-  [type code param value]
-  (let [body (json/json-str {:type  (string/upper-case (name type))
-                             :code  (string/upper-case (name code))
-                             :param param
-                             :value value})]
-    (log/warn "illegal argument received:" body)
-    {:status       400
-     :body         body
-     :content-type :json}))
-
-(defn- java-exception-json
-  [e]
-  (let [ename (.. e getClass getSimpleName)
-        comps (filter (comp not string/blank?)
-                      (string/split ename #"(?=\p{Upper})"))
-        code  (string/join "_" (map string/upper-case comps))]
-    (json/json-str {:code    code
-                    :message (.getMessage e)})))
-
-(defn error-resp
-  "Returns a value that Ring can use to generate a 400 response."
-  [e]
-  (log/error e "bad request")
-  {:status       400
-   :body         (java-exception-json e)
-   :content-type :json})
-
-(defn failure-resp
-  "Returns a value that Ring can use to generate a 500 response."
-  [e]
-  (log/error e "internal error")
-  {:status       500
-   :body         (java-exception-json e)
-   :content-type :json})
-
 (defn valid-email-addr
   "Validates an e-mail address."
   [addr]
@@ -85,11 +47,11 @@
 
 (defn string->long
   "Converts a string to a long integer."
-  [s code exception-info-map]
+  [s details exception-info-map]
   (try+
    (Long/parseLong s)
    (catch NumberFormatException e
      (throw+
-      (merge {:type  :illegal-argument
-              :code  code}
+      (merge {:error_code ce/ERR_ILLEGAL_ARGUMENT
+              :details    details}
              exception-info-map)))))

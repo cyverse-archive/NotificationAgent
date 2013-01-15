@@ -1,24 +1,24 @@
 (ns notification-agent.query
  (:use [notification-agent.common]
        [notification-agent.config]
-       [notification-agent.messages :only [sort-messages]]
-       [notification-agent.search]
+       [notification-agent.messages :only [reformat-message]]
        [clojure.string :only [blank? lower-case]]
        [slingshot.slingshot :only [throw+]])
  (:require [clojure.data.json :as json]
-           [clojure.tools.logging :as log]))
+           [clojure.tools.logging :as log]
+           [notification-agent.db :as db]))
 
 (defn- count-messages*
-  "Counts the number of matching messages in the OSM."
-  [query]
-  (let [total (count-matching-messages query)]
+  "Counts the number of matching messages."
+  [user query]
+  (let [total (db/count-matching-messages user query)]
     (json-resp 200 (json/json-str {:total (str total)}))))
 
 (defn- get-messages*
-  "Retrieves notification messages from the OSM."
-  [query]
-  (let [results (query-osm query)
-        body    (extract-messages query results)]
+  "Retrieves notification messages."
+  [user query]
+  (let [body {:total    (db/count-matching-messages query)
+              :messages (map reformat-message (db/find-matching-messages user query))}]
     (json-resp 200 (json/json-str body))))
 
 (defn- required-string
@@ -56,16 +56,15 @@
   (keyword (lower-case s)))
 
 (defn get-unseen-messages
-  "Looks up all messages in the OSM that have not been seen yet for a specified
-   user."
-  [{:keys [user]}]
-  (log/debug "retrieving unseen messages for" user)
-  (get-messages* {:user       user
-                  :limit      0
-                  :offset     0
-                  :seen       false
-                  :sort-field :timestamp
-                  :sort-dir   :asc}))
+  "Looks up all messages in the that have not been seen yet for a specified user."
+  [query-params]
+  (let [user  (required-string :user query-params)]
+    (log/debug "retrieving unseen messages for" user)
+    (get-messages* user {:limit      0
+                         :offset     0
+                         :seen       false
+                         :sort-field :timestamp
+                         :sort-dir   :asc})))
 
 (defn get-paginated-messages
   "Provides a paginated view for notification messages.  This endpoint takes
@@ -83,14 +82,14 @@
        sortDir   - the sort direction, 'asc' or 'desc' - optional (desc)
        filter    - filter by message type ('data', 'analysis', etc.)"
   [query-params]
-  (let [query {:user       (required-string :user query-params)
-               :limit      (optional-long :limit query-params 0)
+  (let [user  (required-string :user query-params)
+        query {:limit      (optional-long :limit query-params 0)
                :offset     (optional-long :offset query-params 0)
                :seen       (optional-boolean :seen query-params)
                :sort-field (as-keyword (:sortfield query-params "timestamp"))
                :sort-dir   (as-keyword (:sortdir query-params "desc"))
                :filter     (:filter query-params)}]
-    (get-messages* query)))
+    (get-messages* user query)))
 
 (defn count-messages
   "Provides a way to retrieve the number of messages that match a set of
@@ -102,22 +101,22 @@
                    and unseen messages)
        filter    - filter by message type ('data', 'analysis', etc.)"
   [query-params]
-  (let [query {:user       (required-string :user query-params)
-               :seen       (optional-boolean :seen query-params)
+  (let [user   (required-string :user query-params)
+        query {:seen       (optional-boolean :seen query-params)
                :filter     (:filter query-params)}]
-    (count-messages* query)))
+    (count-messages* user query)))
 
 (defn last-ten-messages
   "Obtains the ten most recent notifications for the user in ascending order."
   [query-params]
-  (let [query   {:user       (required-string :user query-params)
-                 :limit      10
+  (let [user    (required-string :user query-params)
+        query   {:limit      10
                  :offset     0
                  :sort-field :timestamp
                  :sort-dir   :desc}
-        results (query-osm query)
-        body    (extract-messages query results)
-        msgs    (:messages body)
-        key-fn  #(get-in % [:message :timestamp])
-        body    (assoc body :messages (sort-by key-fn msgs))]
-    (json-resp 200 (json/json-str body))))
+        total   (db/count-matching-messages user query)
+        results (->> (db/find-matching-messages user query)
+                     (map reformat-message)
+                     (sort-by #(get-in % [:message :timestamp])))]
+    (json-resp 200 (json/json-str {:total    total
+                                   :messages results}))))

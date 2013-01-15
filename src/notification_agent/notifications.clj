@@ -34,14 +34,12 @@
   [request]
   {:type (:type request)
    :user (:user request)
-   :deleted false
-   :seen false
    :subject (:subject request)
    :email (:email request false)
    :email_template (:email_template request)
    :payload (:payload request {})
    :message {:id ""
-             :timestamp (current-time)
+             :timestamp (str (System/currentTimeMillis))
              :text (:message request (:subject request))}})
 
 (defn- email-request

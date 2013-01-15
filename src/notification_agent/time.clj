@@ -26,12 +26,6 @@
   [timestamp]
   (string/replace timestamp #"\s*\([^\)]*\)$" ""))
 
-(defn current-time
-  "Returns the current time, formatted in a similar manner to the default
-   date and time format used by JavaScript."
-  []
-  (unparse date-formatter (now)))
-
 (defn unparse-epoch-string
   "Parses a string or long containing the seconds since the epoch.  Returns a
    string containing a formatted date."

@@ -1,8 +1,9 @@
 (ns notification-agent.core
   (:gen-class)
   (:use [clojure.java.io :only [file]]
-        [clojure-commons.lcase-params :only (wrap-lcase-params)]
-        [clojure-commons.query-params :only (wrap-query-params)]
+        [clojure-commons.error-codes :only [trap]]
+        [clojure-commons.lcase-params :only [wrap-lcase-params]]
+        [clojure-commons.query-params :only [wrap-query-params]]
         [compojure.core]
         [ring.middleware keyword-params nested-params]
         [notification-agent.common]
@@ -19,19 +20,6 @@
             [notification-agent.config :as config]
             [notification-agent.db :as db]
             [ring.adapter.jetty :as jetty]))
-
-(defn- trap
-  [f]
-  (try+
-   (f)
-   (catch [:type :illegal-argument] {:keys [type code param value]}
-     (illegal-argument-resp type code param value))
-   (catch IllegalArgumentException e
-     (error-resp e))
-   (catch IllegalStateException e
-     (error-resp e))
-   (catch Throwable t
-     (failure-resp t))))
 
 (defn- job-status
   "Handles a job status update request."

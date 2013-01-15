@@ -1,14 +1,15 @@
 (ns notification-agent.messages
- (:use [notification-agent.config]
-       [notification-agent.messages]
-       [notification-agent.time]
-       [slingshot.slingshot :only [throw+]])
- (:require [clj-http.client :as client]
-           [clojure-commons.osm :as osm]
-           [clojure.data.json :as json]
-           [clojure.tools.logging :as log])
- (:import [java.io IOException]
-          [java.util Comparator]))
+  (:use [notification-agent.config]
+        [notification-agent.messages]
+        [notification-agent.time]
+        [slingshot.slingshot :only [throw+]])
+  (:require [clj-http.client :as client]
+            [clojure-commons.osm :as osm]
+            [clojure.data.json :as json]
+            [clojure.tools.logging :as log]
+            [notification-agent.db :as db])
+  (:import [java.io IOException]
+           [java.util Comparator]))
 
 (defn- fix-timestamp
   "Some timestamps are stored in the default timestamp format used by
@@ -46,9 +47,9 @@
 
 (defn- persist-msg
   "Persists a message in the OSM."
-  [msg]
+  [{type :type username :user {subject :text created-date :timestamp} :message :as msg}]
   (log/debug "saving a message in the OSM:" msg)
-  #_(osm/save-object (notifications-osm) msg))
+  (db/insert-notification type username subject created-date msg))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."

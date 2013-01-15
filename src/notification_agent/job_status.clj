@@ -1,6 +1,6 @@
 (ns notification-agent.job-status
-  (:use [clojure.string :only (lower-case)]
-        [clojure.pprint :only (pprint)]
+  (:use [clojure.string :only [lower-case]]
+        [clojure.pprint :only [pprint]]
         [notification-agent.config]
         [notification-agent.common]
         [notification-agent.messages]
@@ -9,6 +9,7 @@
             [clj-http.client :as client]
             [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log]
+            [notification-agent.db :as db]
             [notification-agent.json :as na-json])
   (:import [java.io IOException]))
 
@@ -68,12 +69,10 @@
   [state]
   {:type (:type state)
    :user (:user state)
-   :deleted false
-   :seen false
    :outputDir (:output_dir state)
    :outputManifest (:output_manifest state)
    :message {:id ""
-             :timestamp (current-time)
+             :timestamp (str (System/currentTimeMillis))
              :text (job-status-msg state)}
    :payload {:id (:uuid state)
              :action "job_status_change"
@@ -94,31 +93,6 @@
   (log/debug "job" (:name state) "just completed")
   (persist-and-send-msg (add-email-request (state-to-msg state) state)))
 
-(defn- get-notification-status-object
-  "Loads the notification status object for the job with the given UUID."
-  [uuid]
-  #_(let [query {"state.id" uuid}
-          results (na-json/read-json (osm/query (job-status-osm) query))]
-      (first (:objects results))))
-
-(defn- get-notification-status
-  "Gets the status of the most recent notification associated with a job."
-  [uuid]
-  (let [obj (get-notification-status-object uuid)]
-    (if (nil? obj) "" (get-in obj [:state :status]))))
-
-(defn- update-notification-status
-  "Stores the last status seen by the notification agent for a job in the job
-   statuses bucket in the OSM."
-  [{uuid :uuid status :status job-name :name}]
-  #_(let [status-obj (get-notification-status-object uuid)
-          new-state {:id uuid :status status}]
-      (log/info "updating the notification status for job" job-name)
-      (if (nil? status-obj)
-        (osm/save-object (job-status-osm) new-state)
-        (osm/update-object
-         (job-status-osm) (:object_persistence_uuid status-obj) new-state))))
-
 (defn- handle-status-change
   "Handles a job with a status that has been changed since the job was last
    seen by the notification agent.  To do this, a notification needs to be
@@ -130,7 +104,7 @@
     (if completed
       (handle-completed-job uuid state)
       (persist-and-send-msg (state-to-msg state)))
-    (update-notification-status state)))
+    (db/update-notification-status (:uuid state) (:status state))))
 
 (defn- job-status-changed
   "Determines whether or not the status of a job corresponding to a state
@@ -138,7 +112,7 @@
   [state]
   (let [curr-status (:status state)
         uuid (:uuid state)
-        prev-status (get-notification-status uuid)]
+        prev-status (db/get-notification-status uuid)]
     (not= curr-status prev-status)))
 
 (defn- get-jobs-with-inconsistent-state

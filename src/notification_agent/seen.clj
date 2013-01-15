@@ -1,41 +1,26 @@
 (ns notification-agent.seen
   (:use [notification-agent.common]
         [notification-agent.config]
-        [notification-agent.search :only [count-matching-messages query-osm]]
         [slingshot.slingshot :only [throw+ try+]])
   (:require [clojure.data.json :as json]
+            [clojure-commons.error-codes :as ce]
             [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log]
+            [notification-agent.db :as db]
             [notification-agent.json :as na-json]))
-
-(defn- update-seen-flag
-  "Updates the seen flag in a notification message."
-  [{id :object_persistence_uuid state :state}]
-  (log/trace "updating the seen flag for message:" id)
-  #_(when (not (:seen state))
-      (osm/update-object (notifications-osm) id (assoc state :seen true))))
-
-(defn- get-notification
-  "Gets a notification from the OSM."
-  [uuid]
-  (try+
-   #_(na-json/read-json (osm/get-object (notifications-osm) uuid))
-   (catch [:body "URL does not exist."] _
-     (log/warn (str "attempt to mark non-existent message, " uuid
-                    ", as seen ignored"))
-     nil)
-   (catch Object e
-     (log/error e "unexpected exception")
-     (throw+))))
 
 (defn- validate-uuids
   "Validates the list of UUIDs that was passed in."
   [uuids body]
   (when (empty? uuids)
-    (throw+ {:type  :illegal-argument
-             :code  ::no-identifiers-in-request
-             :param "uuids"
-             :value body})))
+    (throw+ {:error_code ce/ERR_BAD_OR_MISSING_FIELD
+             :field_name :uuids
+             :body       body})))
+
+(defn- successful-seen-response
+  "Returns the response for a successful request to mark messages seen."
+  [user]
+  (success-resp {:count (str (db/count-matching-messages user {:seen false}))}))
 
 (defn mark-messages-seen
   "Marks one or more notification messages as seen."
@@ -43,26 +28,12 @@
   (validate-user user)
   (let [uuids (:uuids (na-json/read-json body))]
     (validate-uuids uuids body)
-    (dorun
-     (->> uuids
-          (map get-notification)
-          (remove nil?)
-          (map update-seen-flag)))
-    (success-resp {:count (str (count-matching-messages
-                                {:user user
-                                 :seen false}))})))
+    (db/mark-notifications-seen user uuids)
+    (successful-seen-response user)))
 
 (defn mark-all-messages-seen
   "Marks all notification messages as seen."
   [body]
-  (let [request (parse-body body)
-        user (validate-user (:user request))
-        msgs (query-osm (assoc request :seen false))]
-    (dorun
-      (->> msgs
-        (:objects)
-        (remove nil?)
-        (map update-seen-flag)))
-    (success-resp {:count (str (count-matching-messages
-                                 {:user user
-                                  :seen false}))})))
+  (let [user (validate-user (:user (parse-body body)))]
+    (db/mark-matching-notifications-seen user {:seen false})
+    (successful-seen-response user)))
