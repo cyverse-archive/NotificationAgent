@@ -6,7 +6,6 @@
         [slingshot.slingshot :only [throw+ try+]])
   (:require [clojure-commons.error-codes :as ce]
             [clojure.string :as string]
-            [clojure.tools.logging :as log]
             [korma.sql.engine :as eng])
   (:import [java.sql Timestamp]
            [java.util UUID]))

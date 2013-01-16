@@ -3,8 +3,7 @@
         [slingshot.slingshot :only [throw+]])
   (:require [clojure.tools.logging :as log]
             [clojure-commons.error-codes :as ce]
-            [notification-agent.db :as db]
-            [notification-agent.json :as na-json]))
+            [notification-agent.db :as db]))
 
 (defn delete-messages
   "Handles a message deletion request.  The request body should consist of

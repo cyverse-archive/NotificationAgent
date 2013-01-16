@@ -1,12 +1,10 @@
 (ns notification-agent.core
   (:gen-class)
-  (:use [clojure.java.io :only [file]]
-        [clojure-commons.error-codes :only [trap]]
+  (:use [clojure-commons.error-codes :only [trap]]
         [clojure-commons.lcase-params :only [wrap-lcase-params]]
         [clojure-commons.query-params :only [wrap-query-params]]
         [compojure.core]
         [ring.middleware keyword-params nested-params]
-        [notification-agent.common]
         [notification-agent.delete]
         [notification-agent.job-status]
         [notification-agent.notifications]
@@ -14,9 +12,7 @@
         [notification-agent.seen]
         [slingshot.slingshot :only [try+]])
   (:require [compojure.route :as route]
-            [compojure.handler :as handler]
             [clojure.tools.logging :as log]
-            [clojure-commons.clavin-client :as cl]
             [notification-agent.config :as config]
             [notification-agent.db :as db]
             [ring.adapter.jetty :as jetty]))
@@ -88,6 +84,7 @@
 (defn site-handler [routes]
   (-> routes
       wrap-keyword-params
+      wrap-lcase-params
       wrap-nested-params
       wrap-query-params))
 
@@ -98,18 +95,18 @@
   []
   (db/define-database))
 
-(defn- load-config-from-file
+(defn load-config-from-file
   []
   (config/load-config-from-file)
   (init-service))
 
-(defn- load-config-from-zookeeper
+(defn load-config-from-zookeeper
   []
   (config/load-config-from-zookeeper)
   (init-service))
 
 (defn -main
-  [& args]
+  [& _]
   (load-config-from-zookeeper)
   (initialize-job-status-service)
   (log/warn "Listening on" (config/listen-port))

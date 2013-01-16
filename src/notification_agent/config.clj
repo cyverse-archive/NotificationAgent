@@ -1,5 +1,5 @@
 (ns notification-agent.config
-  (:use [slingshot.slingshot :only [throw+ try+]])
+  (:use [slingshot.slingshot :only [throw+]])
   (:require [clojure-commons.config :as cc]
             [clojure-commons.error-codes :as ce]
             [clojure-commons.osm :as osm]))

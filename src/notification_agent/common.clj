@@ -1,7 +1,6 @@
 (ns notification-agent.common
   (:use [slingshot.slingshot :only [try+ throw+]])
   (:require [clojure.data.json :as json]
-            [clojure.string :as string]
             [clojure.tools.logging :as log]
             [clojure-commons.error-codes :as ce]
             [clojure-commons.json :as cc-json]))

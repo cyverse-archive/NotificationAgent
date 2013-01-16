@@ -1,11 +1,7 @@
 (ns notification-agent.seen
   (:use [notification-agent.common]
-        [notification-agent.config]
-        [slingshot.slingshot :only [throw+ try+]])
-  (:require [clojure.data.json :as json]
-            [clojure-commons.error-codes :as ce]
-            [clojure-commons.osm :as osm]
-            [clojure.tools.logging :as log]
+        [slingshot.slingshot :only [throw+]])
+  (:require [clojure-commons.error-codes :as ce]
             [notification-agent.db :as db]
             [notification-agent.json :as na-json]))
 

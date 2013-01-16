@@ -1,6 +1,5 @@
 (ns notification-agent.query
  (:use [notification-agent.common]
-       [notification-agent.config]
        [notification-agent.messages :only [reformat-message]]
        [clojure.string :only [blank? lower-case]]
        [slingshot.slingshot :only [throw+]])
@@ -37,9 +36,8 @@
   [k m d]
   (let [v (k m)]
     (if-not (nil? v)
-      (string->long v ::invalid-long-integer-param
-                    {:param (name k)
-                     :value v})
+      (string->long v ::invalid-long-integer-param {:param (name k)
+                                                    :value v})
       d)))
 
 (defn- optional-boolean
@@ -102,8 +100,8 @@
        filter    - filter by message type ('data', 'analysis', etc.)"
   [query-params]
   (let [user   (required-string :user query-params)
-        query {:seen       (optional-boolean :seen query-params)
-               :filter     (:filter query-params)}]
+        query {:seen   (optional-boolean :seen query-params)
+               :filter (:filter query-params)}]
     (count-messages* user query)))
 
 (defn last-ten-messages
