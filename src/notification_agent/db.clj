@@ -264,4 +264,27 @@
                      :subject      subject
                      :message      message
                      :date_created (parse-date created-date)}))
-    (string/upper-case (str UUID))))
+    (string/upper-case (str uuid))))
+
+(defn get-notification-id
+  [uuid]
+  (select notifications
+          (fields :id)
+          (where {:uuid (parse-uuid uuid)})))
+
+(defn- notification-id-subselect
+  "Creates a subselect statement to obtain the primary key for the notification
+   with the given UUID."
+  [uuid]
+  (subselect notifications
+             (fields :id)
+             (where {:uuid (parse-uuid uuid)})))
+
+(defn record-email-request
+  "Inserts a record of an e-mail request into the database."
+  [uuid template addr payload]
+  (insert email_notification_messages
+          (values {:notification_id (notification-id-subselect uuid)
+                   :template        template
+                   :address         addr
+                   :payload         payload})))

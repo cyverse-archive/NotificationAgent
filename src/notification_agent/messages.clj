@@ -39,11 +39,13 @@
 
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
-  [request]
+  [notification-uuid {:keys [template to] :as request}]
   (log/debug "sending an e-mail request:" request)
-  (client/post (email-url)
-               {:body         (json/json-str request)
-                :content-type :json}))
+  (let [json-request (json/json-str request)]
+    (client/post (email-url)
+                 {:body         (json/json-str request)
+                  :content-type :json})
+    (db/record-email-request notification-uuid template to json-request)))
 
 (defn- persist-msg
   "Persists a message in the OSM."
@@ -75,5 +77,5 @@
         email-request (:email_request msg)]
     (log/debug "UUID of persisted message:" uuid)
     (when-not (nil? email-request)
-      (send-email-request email-request))
+      (send-email-request uuid email-request))
     (send-msg (json/json-str (reformat-message uuid msg)))))
