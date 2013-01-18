@@ -18,7 +18,7 @@
    format."
   [timestamp]
   (let [ts (str timestamp)]
-    (if (re-matches #"^\d*$" ts) ts (timestamp->millis ts))))
+    (if (re-matches #"^\d*$" ts) ts (str (timestamp->millis ts)))))
 
 (defn- opt-update-in
   "Updates a value in a map if that value exists."
@@ -49,7 +49,7 @@
   "Persists a message in the OSM."
   [{type :type username :user {subject :text created-date :timestamp} :message :as msg}]
   (log/debug "saving a message in the OSM:" msg)
-  (db/insert-notification type username subject created-date msg))
+  (db/insert-notification type username subject created-date (json/json-str msg)))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."

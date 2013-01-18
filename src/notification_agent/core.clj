@@ -20,52 +20,52 @@
 (defn- job-status
   "Handles a job status update request."
   [body]
-  (trap #(handle-job-status body)))
+  (trap :job-status #(handle-job-status body)))
 
 (defn- notification
   "Handles a generic notification request."
   [body]
-  (trap #(handle-notification-request body)))
+  (trap :notification #(handle-notification-request body)))
 
 (defn- delete
   "Handles a message deletion request."
   [params body]
-  (trap #(delete-messages params body)))
+  (trap :delete #(delete-messages params body)))
 
 (defn- delete-all
   "Handles a request to delete all messages for a user."
   [params]
-  (trap #(delete-all-messages params)))
+  (trap :delete-all #(delete-all-messages params)))
 
 (defn- unseen-messages
   "Handles a query for unseen messages."
   [query]
-  (trap #(get-unseen-messages query)))
+  (trap :unseen-messages #(get-unseen-messages query)))
 
 (defn- messages
   "Handles a request for a paginated message view."
   [query]
-  (trap #(get-paginated-messages query)))
+  (trap :messages #(get-paginated-messages query)))
 
 (defn- count-msgs
   "Handles a request to count messages."
   [query]
-  (trap #(count-messages query)))
+  (trap :count-messages #(count-messages query)))
 
 (defn- last-ten
   "Handles a request to get the most recent ten messages."
   [query]
-  (trap #(last-ten-messages query)))
+  (trap :last-ten-messages #(last-ten-messages query)))
 
 (defn- mark-seen
   "Handles a request to mark one or messages as seen."
   [body params]
-  (trap #(mark-messages-seen body params)))
+  (trap :seen #(mark-messages-seen body params)))
 
 (defn- mark-all-seen
   "Handles a request to mark all messages for a user as seen."
   [body]
-  (trap #(mark-all-messages-seen body)))
+  (trap :mark-all-seen #(mark-all-messages-seen body)))
 
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")

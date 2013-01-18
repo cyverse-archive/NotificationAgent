@@ -146,7 +146,7 @@
 (defn handle-job-status
   "Handles a job status update request with the given body."
   [body]
-  (let [{state :state uuid :object_persistence_uuid} (parse-body body)]
+  (let [{:keys [state]} (parse-body body)]
     (log/info "received a job status update request for job" (:name state)
               "with status" (:status state))
     (if (job-status-changed? state)

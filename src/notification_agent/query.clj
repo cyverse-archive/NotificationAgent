@@ -1,11 +1,17 @@
 (ns notification-agent.query
  (:use [notification-agent.common]
        [notification-agent.messages :only [reformat-message]]
-       [clojure.string :only [blank? lower-case]]
+       [clojure.string :only [blank? lower-case upper-case]]
        [slingshot.slingshot :only [throw+]])
  (:require [clojure.data.json :as json]
            [clojure.tools.logging :as log]
            [notification-agent.db :as db]))
+
+(defn- reformat
+  "Reformats a message corresponding to a notification that was retrieved from
+   the database."
+  [{:keys [uuid message]}]
+  (reformat-message (upper-case (str uuid)) (json/read-json message)))
 
 (defn- count-messages*
   "Counts the number of matching messages."
@@ -16,8 +22,8 @@
 (defn- get-messages*
   "Retrieves notification messages."
   [user query]
-  (let [body {:total    (db/count-matching-messages query)
-              :messages (map reformat-message (db/find-matching-messages user query))}]
+  (let [body {:total    (str (db/count-matching-messages user query))
+              :messages (map reformat (db/find-matching-messages user query))}]
     (json-resp 200 (json/json-str body))))
 
 (defn- required-string
@@ -114,7 +120,7 @@
                  :sort-dir   :desc}
         total   (db/count-matching-messages user query)
         results (->> (db/find-matching-messages user query)
-                     (map reformat-message)
+                     (map reformat)
                      (sort-by #(get-in % [:message :timestamp])))]
-    (json-resp 200 (json/json-str {:total    total
+    (json-resp 200 (json/json-str {:total    (str total)
                                    :messages results}))))

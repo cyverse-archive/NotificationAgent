@@ -29,29 +29,34 @@
 (defn- parse-uuid
   "Parses a UUID in the standard format."
   [uuid]
-  (try+
-   (UUID/fromString uuid)
-   (catch IllegalArgumentException _
-     (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
-              :description "invalid UUID"
-              :value       uuid}))))
+  (and uuid
+       (try+
+        (UUID/fromString uuid)
+        (catch IllegalArgumentException _
+          (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
+                   :description "invalid UUID"
+                   :value       uuid})))))
 
 (defn- parse-date
   "Parses a date that is specified as a string representing the number of
    milliseconds since January 1, 1970."
-  [millis param-name]
+  [millis & [param-name]]
   (try+
    (Timestamp. (Long/parseLong millis))
    (catch NumberFormatException _
-     (throw+ {:error_code  ce/ERR_BAD_QUERY_PARAMETER
-              :param_name  param-name
-              :param_value millis}))))
+     (if param-name
+       (throw+ {:error_code  ce/ERR_BAD_QUERY_PARAMETER
+                :param_name  param-name
+                :param_value millis})
+       (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
+                :field_name  :timestamp
+                :field_value millis})))))
 
 (defn- parse-boolean
   "Parses a boolean field that is specified as a string."
   [value]
   (cond (nil? value)              value
-        (instance? Boolean value) value
+        (instance? Boolean value) (.booleanValue value)
         :else                     (Boolean/parseBoolean value)))
 
 (defn- add-created-before-condition
@@ -80,7 +85,7 @@
                      (keyword (string/lower-case sort-field))
                      (keyword sort-field))
         sort-field (if (= :timestamp sort-field)
-                     :created_date
+                     :date_created
                      sort-field)]
     (when-not ((set (:fields notifications)) (eng/prefix notifications sort-field))
       (throw+ {:error_code ce/ERR_ILLEGAL_ARGUMENT
@@ -92,9 +97,9 @@
   "Validates the sort order for a query."
   [sort-dir]
   (when sort-dir
-    (let [sort-dir (if (string? sort-dir)
-                     (keyword (string/upper-case sort-dir))
-                     (keyword sort-dir))]
+    (let [sort-dir (cond (string? sort-dir)  (keyword (string/upper-case sort-dir))
+                         (keyword? sort-dir) (keyword (string/upper-case (name sort-dir)))
+                         :else               nil)]
       (when-not (#{:ASC :DESC} sort-dir)
         (throw+ {:error_code ce/ERR_ILLEGAL_ARGUMENT
                  :arg_name   :sort-dir
@@ -127,14 +132,14 @@
 (defn- add-limit-clause
   "Adds a limit clause to a notifiation query if a limit is specified."
   [query {v :limit}]
-  (if v
+  (if (and v (pos? v))
     (limit query (validate-non-negative-int :limit v))
     query))
 
 (defn- add-offset-clause
   "Adds an offset clause to a notification query if an offset is specified."
   [query {v :offset}]
-  (if v
+  (if (and v (pos? v))
     (offset query (validate-non-negative-int :order v))
     query))
 
@@ -173,7 +178,7 @@
 (defn count-matching-messages
   "Counts the number of messages matching a set of query-string parameters."
   [user params]
-  (:count
+  ((comp :count first)
    (select notifications
            (aggregate (count :*) :count)
            (where (build-where-clause user params)))))
@@ -193,7 +198,7 @@
   "Parses a UUID in the most recent old job UUID format, which is the standard
    UUID format prefixed by a lower-case j."
   [uuid]
-  (when (re-matches #"j[-0-9a-fA-F]{36}")
+  (when (and uuid (re-matches #"j[-0-9a-fA-F]{36}" uuid))
     (parse-uuid (apply str (drop 1 uuid)))))
 
 (defn- chunk-string
@@ -211,7 +216,7 @@
   "Parses a UUID in the original job UUID format, which is in the format of a
    hexadecimal string with no dashes preceded by a lower-case j."
   [uuid]
-  (when (re-matches #"j[0-9a-fA-F]{32}")
+  (when (and uuid (re-matches #"j[0-9a-fA-F]{32}" uuid))
     (parse-uuid (string/join "-" (chunk-string (rest uuid) [8 4 4 4 12])))))
 
 (defn- parse-job-uuid
@@ -219,7 +224,9 @@
   [job-uuid]
   (or (parse-old-job-uuid job-uuid)
       (parse-older-job-uuid job-uuid)
-      (parse-uuid job-uuid)))
+      (parse-uuid job-uuid)
+      (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
+               :description "missing UUID"})))
 
 (defn get-notification-status
   "Gets the status of the most recent notification associated with a job."
@@ -256,5 +263,5 @@
                      :username     username
                      :subject      subject
                      :message      message
-                     :created_date (parse-date created-date)}))
+                     :date_created (parse-date created-date)}))
     (string/upper-case (str UUID))))
