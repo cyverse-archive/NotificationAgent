@@ -4,10 +4,10 @@
         [notification-agent.common]
         [notification-agent.messages]
         [notification-agent.time])
-  (:require [clojure-commons.osm :as osm]
+  (:require [cheshire.core :as cheshire]
+            [clojure-commons.osm :as osm]
             [clojure.tools.logging :as log]
-            [notification-agent.db :as db]
-            [notification-agent.json :as na-json]))
+            [notification-agent.db :as db]))
 
 (defn- get-descriptive-job-name
   "Extracts a descriptive job name from the job state object.  We can count on
@@ -39,7 +39,7 @@
    :from-name (email-from-name)
    :values    {:analysisname          (:name state)
                :analysisstatus        (:status state)
-               :analysisstartdate     (unparse-epoch-string (:submission_date state))
+               :analysisstartdate     (format-timestamp (:submission_date state))
                :analysisresultsfolder (:output_dir state)
                :analysisdescription   (:description state)}})
 
@@ -104,7 +104,7 @@
   "Determines whether or not the status of a job corresponding to a state
    object has changed since the last time the notification agent saw the job."
   [{:keys [status uuid]}]
-  (not= status (db/get-notification-status uuid)))
+  (and status uuid (not= status (db/get-notification-status uuid))))
 
 (defn- get-jobs-with-inconsistent-state
   "Gets a list of jobs whose current status doesn't match the status last seen
@@ -113,7 +113,7 @@
   []
   (log/debug "retrieving the list of jobs that have been updated while the "
              "notification agent was down")
-  (let [jobs (:objects (na-json/read-json (osm/query (jobs-osm) {})))]
+  (let [jobs (:objects (cheshire/decode (osm/query (jobs-osm) {}) true))]
     (filter #(job-status-changed? (:state %)) jobs)))
 
 (defn- fix-job-status

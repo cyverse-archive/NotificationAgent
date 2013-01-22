@@ -3,7 +3,7 @@
        [clj-time.format :only (formatter parse unparse)]
        [notification-agent.common :only [string->long]])
  (:require [clojure.string :as string])
- (:import [org.joda.time DateTimeZone]
+ (:import [org.joda.time DateTime DateTimeZone]
           [org.joda.time.format DateTimeFormatterBuilder DateTimeParser]))
 
 (def accepted-timestamp-formats
@@ -26,15 +26,15 @@
   [timestamp]
   (string/replace timestamp #"\s*\([^\)]*\)$" ""))
 
-(defn unparse-epoch-string
-  "Parses a string or long containing the seconds since the epoch.  Returns a
-   string containing a formatted date."
-  [epoch-string]
-  (let [epoch-string (str epoch-string)
-        epoch-long   (string->long epoch-string ::invalid-epoch-string
-                                   {:epoch-string epoch-string})
-        epoch-dt     (org.joda.time.DateTime. epoch-long)]
-    (unparse date-formatter epoch-dt)))
+(defn format-timestamp
+  "Formats a timestamp that may be represented as an already formatted
+   timestamp or as a string representing the number of milliseconds since the
+   epoch"
+  [timestamp]
+  (let [timestamp (str timestamp)]
+    (if (re-matches #"\d+" timestamp)
+      (unparse date-formatter (DateTime. (Long/parseLong timestamp)))
+      (unparse date-formatter (parse date-parser (strip-zone-name timestamp))))))
 
 (defn parse-timestamp
   "Parses a timestamp that is in a format similar to the default date and time

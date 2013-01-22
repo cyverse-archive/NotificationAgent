@@ -13,8 +13,8 @@
   [body]
   (try+
     (if (or (instance? InputStream body) (instance? Reader body))
-      (cheshire/decode-stream (reader body))
-      (cheshire/decode body))
+      (cheshire/decode-stream (reader body) true)
+      (cheshire/decode body true))
     (catch Throwable t
       (throw+ {:error_code ce/ERR_INVALID_JSON
                :defails    (.getMessage t)}))))

@@ -51,7 +51,8 @@
   "Persists a message in the OSM."
   [{type :type username :user {subject :text created-date :timestamp} :message :as msg}]
   (log/debug "saving a message in the OSM:" msg)
-  (db/insert-notification type username subject created-date (cheshire/encode msg)))
+  (db/insert-notification
+   (or type "analysis") username subject created-date (cheshire/encode msg)))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."

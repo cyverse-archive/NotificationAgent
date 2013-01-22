@@ -2,8 +2,7 @@
   (:use [notification-agent.common]
         [slingshot.slingshot :only [throw+]])
   (:require [clojure-commons.error-codes :as ce]
-            [notification-agent.db :as db]
-            [notification-agent.json :as na-json]))
+            [notification-agent.db :as db]))
 
 (defn- validate-uuids
   "Validates the list of UUIDs that was passed in."
@@ -22,7 +21,7 @@
   "Marks one or more notification messages as seen."
   [body {:keys [user]}]
   (validate-user user)
-  (let [uuids (:uuids (na-json/read-json body))]
+  (let [uuids (:uuids (parse-body body))]
     (validate-uuids uuids body)
     (db/mark-notifications-seen user uuids)
     (successful-seen-response user)))
