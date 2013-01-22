@@ -3,7 +3,7 @@
        [notification-agent.messages :only [reformat-message]]
        [clojure.string :only [blank? lower-case upper-case]]
        [slingshot.slingshot :only [throw+]])
- (:require [clojure.data.json :as json]
+ (:require [cheshire.core :as cheshire]
            [clojure.tools.logging :as log]
            [notification-agent.db :as db]))
 
@@ -11,20 +11,20 @@
   "Reformats a message corresponding to a notification that was retrieved from
    the database."
   [{:keys [uuid message]}]
-  (reformat-message (upper-case (str uuid)) (json/read-json message)))
+  (reformat-message (upper-case (str uuid)) (cheshire/decode message true)))
 
 (defn- count-messages*
   "Counts the number of matching messages."
   [user query]
   (let [total (db/count-matching-messages user query)]
-    (json-resp 200 (json/json-str {:total (str total)}))))
+    (json-resp 200 (cheshire/encode {:total (str total)}))))
 
 (defn- get-messages*
   "Retrieves notification messages."
   [user query]
   (let [body {:total    (str (db/count-matching-messages user query))
               :messages (map reformat (db/find-matching-messages user query))}]
-    (json-resp 200 (json/json-str body))))
+    (json-resp 200 (cheshire/encode body))))
 
 (defn- required-string
   "Extracts a required string argument from the query-string map."
@@ -122,5 +122,5 @@
         results (->> (db/find-matching-messages user query)
                      (map reformat)
                      (sort-by #(get-in % [:message :timestamp])))]
-    (json-resp 200 (json/json-str {:total    (str total)
-                                   :messages results}))))
+    (json-resp 200 (cheshire/encode {:total    (str total)
+                                     :messages results}))))

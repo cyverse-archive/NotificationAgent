@@ -1,8 +1,8 @@
 (defproject notificationagent "2.0.0-SNAPSHOT"
   :description "Notification Agent v1.2.0"
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [org.clojure/data.json "0.1.2"]
                  [org.clojure/tools.logging "0.2.3"]
+                 [cheshire "5.0.1"]
                  [compojure "1.0.2"]
                  [org.iplantc/clojure-commons "1.3.3-SNAPSHOT"]
                  [org.iplantc/kameleon "0.0.2-SNAPSHOT"]

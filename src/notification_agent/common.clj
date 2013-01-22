@@ -1,18 +1,23 @@
 (ns notification-agent.common
-  (:use [slingshot.slingshot :only [try+ throw+]])
-  (:require [clojure.data.json :as json]
+  (:use [clojure.java.io :only [reader]]
+        [slingshot.slingshot :only [try+ throw+]])
+  (:require [cheshire.core :as cheshire]
             [clojure.tools.logging :as log]
             [clojure-commons.error-codes :as ce]
-            [clojure-commons.json :as cc-json]))
+            [clojure-commons.json :as cc-json])
+  (:import [java.io InputStream Reader]))
 
 (defn parse-body
   "Parses a JSON request body, throwing an IllegalArgumentException if the
    body can't be parsed."
   [body]
-  (try
-    (cc-json/body->json body)
+  (try+
+    (if (or (instance? InputStream body) (instance? Reader body))
+      (cheshire/decode-stream (reader body))
+      (cheshire/decode body))
     (catch Throwable t
-      (throw (IllegalArgumentException. (str "invalid request body: " t))))))
+      (throw+ {:error_code ce/ERR_INVALID_JSON
+               :defails    (.getMessage t)}))))
 
 (defn validate-user
   "Validates the username that was passed in. Returns the username when valid."
@@ -28,7 +33,7 @@
      (success-resp {}))
   ([m]
      {:status       200
-      :body         (json/json-str (assoc m :success true))
+      :body         (cheshire/encode (assoc m :success true))
       :content-type :json}))
 
 (defn json-resp

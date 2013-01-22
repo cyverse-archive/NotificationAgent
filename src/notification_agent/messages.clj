@@ -3,9 +3,9 @@
         [notification-agent.messages]
         [notification-agent.time]
         [slingshot.slingshot :only [throw+]])
-  (:require [clj-http.client :as client]
+  (:require [cheshire.core :as cheshire]
+            [clj-http.client :as client]
             [clojure-commons.osm :as osm]
-            [clojure.data.json :as json]
             [clojure.tools.logging :as log]
             [notification-agent.db :as db])
   (:import [java.io IOException]
@@ -41,9 +41,9 @@
   "Sends an e-mail request to the iPlant e-mail service."
   [notification-uuid {:keys [template to] :as request}]
   (log/debug "sending an e-mail request:" request)
-  (let [json-request (json/json-str request)]
+  (let [json-request (cheshire/encode request)]
     (client/post (email-url)
-                 {:body         (json/json-str request)
+                 {:body         json-request
                   :content-type :json})
     (db/record-email-request notification-uuid template to json-request)))
 
@@ -51,7 +51,7 @@
   "Persists a message in the OSM."
   [{type :type username :user {subject :text created-date :timestamp} :message :as msg}]
   (log/debug "saving a message in the OSM:" msg)
-  (db/insert-notification type username subject created-date (json/json-str msg)))
+  (db/insert-notification type username subject created-date (cheshire/encode msg)))
 
 (defn- send-msg-to-recipient
   "Forawards a message to a single recipient."
@@ -78,4 +78,4 @@
     (log/debug "UUID of persisted message:" uuid)
     (when-not (nil? email-request)
       (send-email-request uuid email-request))
-    (send-msg (json/json-str (reformat-message uuid msg)))))
+    (send-msg (cheshire/encode (reformat-message uuid msg)))))

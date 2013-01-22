@@ -3,8 +3,7 @@
         [notification-agent.config]
         [notification-agent.messages]
         [notification-agent.time])
-  (:require [clojure.data.json :as json]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [clojure.tools.logging :as log]))
 
 (defn- validate-field
