@@ -10,8 +10,11 @@
 (defn- reformat
   "Reformats a message corresponding to a notification that was retrieved from
    the database."
-  [{:keys [uuid message]}]
-  (reformat-message (upper-case (str uuid)) (cheshire/decode message true)))
+  [{:keys [uuid message seen deleted]}]
+  (reformat-message (upper-case (str uuid))
+                    (cheshire/decode message true)
+                    :seen seen
+                    :deleted deleted))
 
 (defn- count-messages*
   "Counts the number of matching messages."

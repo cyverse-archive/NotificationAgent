@@ -29,13 +29,14 @@
 (defn reformat-message
   "Converts a message from the format stored in the OSM to the format that the
    DE expects."
-  [uuid state]
+  [uuid state & {:keys [seen deleted] :or {seen false deleted false}}]
   (-> state
     (assoc-in [:message :id] uuid)
     (opt-update-in [:message :timestamp] fix-timestamp)
     (opt-update-in [:payload :startdate] fix-timestamp)
     (opt-update-in [:payload :enddate] fix-timestamp)
-    (dissoc :email_request)))
+    (dissoc :email_request)
+    (assoc :seen seen :deleted deleted)))
 
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
