@@ -4,7 +4,7 @@
                  [org.clojure/tools.logging "0.2.3"]
                  [cheshire "5.0.1"]
                  [compojure "1.0.2"]
-                 [org.iplantc/clojure-commons "1.3.3-SNAPSHOT"]
+                 [org.iplantc/clojure-commons "1.4.0-SNAPSHOT"]
                  [org.iplantc/kameleon "0.0.2-SNAPSHOT"]
                  [clj-http "0.5.5"]
                  [clj-time "0.4.4"]
