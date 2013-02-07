@@ -26,6 +26,13 @@
     (defonce notifications-db (create-db spec))
     (default-connection notifications-db)))
 
+(defn- get-user-id
+  "Gets the database primary key of the user with the given username.  If the
+   user doesn't exist then a new row will be inserted into the database."
+  [username]
+  (or (:id (first (select users (where {:username username}))))
+      (:id (insert users (values {:username username})))))
+
 (defn- parse-uuid
   "Parses a UUID in the standard format."
   [uuid]
@@ -67,15 +74,25 @@
     (assoc query :date_created [< (parse-date created-before :created-before)])
     query))
 
+(defn- user-id-subselect
+  "Builds an subselect query that can be used to get an internal user ID."
+  [user]
+  (subselect users
+             (fields :id)
+             (where {:username user})))
+
 (defn- build-where-clause
-  "Builds an SQL where clause for a notification query from a set of query-string parameters."
+  "Builds an SQL where clause for a notification query from a set of query-string parameters.
+   We're trying to remain compliant with ANSI SQL if possible, which only allows joins in
+   SELECT statements, so a sub-query has to be used in this where clause to match notifications
+   for the given username."
   [user {:keys [type subject seen] :as params}]
   (add-created-before-condition
-   (into {} (remove (comp nil? val) {:type     (or type (:filter params))
-                                     :username user
-                                     :subject  subject
-                                     :seen     (parse-boolean seen)
-                                     :deleted  false}))
+   (into {} (remove (comp nil? val) {:type    (or type (:filter params))
+                                     :user_id (user-id-subselect user)
+                                     :subject subject
+                                     :seen    (parse-boolean seen)
+                                     :deleted false}))
    params))
 
 (defn- validate-notification-sort-field
@@ -149,8 +166,8 @@
   [user uuids]
   (update notifications
           (set-fields {:deleted true})
-          (where {:username user
-                  :uuid     [in (map parse-uuid uuids)]})))
+          (where {:user_id (user-id-subselect user)
+                  :uuid    [in (map parse-uuid uuids)]})))
 
 (defn delete-matching-notifications
   "Deletes notifications matching a set of incoming parameters."
@@ -165,8 +182,8 @@
   [user uuids]
   (update notifications
           (set-fields {:seen true})
-          (where {:username user
-                  :uuid     [in (map parse-uuid uuids)]})))
+          (where {:user_id (user-id-subselect user)
+                  :uuid    [in (map parse-uuid uuids)]})))
 
 (defn mark-matching-notifications-seen
   "Marks notifications matching a set of incoming parameters as seen."
@@ -187,7 +204,9 @@
   "Finds messages matching a set of query-string parameters."
   [user params]
   (-> (select* notifications)
-      (fields :uuid :type :username :subject :seen :deleted :date_created :message)
+      (fields :uuid :type [:users.username :username] :subject :seen :deleted :date_created
+              :message)
+      (with users)
       (where (build-where-clause user params))
       (add-order-by-clause params)
       (add-limit-clause params)
@@ -260,7 +279,7 @@
     (insert notifications
             (values {:uuid         uuid
                      :type         type
-                     :username     username
+                     :user_id      (get-user-id username)
                      :subject      subject
                      :message      message
                      :date_created (parse-date created-date)}))
