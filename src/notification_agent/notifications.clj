@@ -58,7 +58,7 @@
 (defn- add-email-request
   "Adds an e-mail request to the notification message if an e-mail is
    requested."
-  [{payload :payload addr :email_address template :email_template subject :subject :as msg}]
+  [{{addr :email_address :as payload} :payload template :email_template subject :subject :as msg}]
   (if (send-email? (:email msg) template addr)
     (assoc msg :email_request (email-request addr template subject payload))
     msg))
