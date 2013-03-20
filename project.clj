@@ -1,11 +1,11 @@
-(defproject notificationagent "2.0.0-SNAPSHOT"
+(defproject notificationagent "2.0.1-SNAPSHOT"
   :description "Notification Agent v1.2.0"
-  :dependencies [[org.clojure/clojure "1.4.0"]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.logging "0.2.3"]
                  [cheshire "5.0.1"]
                  [compojure "1.0.2"]
-                 [org.iplantc/clojure-commons "1.4.0-SNAPSHOT"]
-                 [org.iplantc/kameleon "0.1.0-SNAPSHOT"]
+                 [org.iplantc/clojure-commons "1.4.1-SNAPSHOT"]
+                 [org.iplantc/kameleon "0.1.1-SNAPSHOT"]
                  [clj-http "0.5.5"]
                  [clj-time "0.4.4"]
                  [ring/ring-jetty-adapter "1.1.0"]
@@ -15,7 +15,7 @@
   :plugins [[lein-ring "0.6.4"]
             [swank-clojure "1.4.2"]
             [lein-marginalia "0.7.0"]
-            [org.iplantc/lein-iplant-rpm "1.4.0-SNAPSHOT"]]
+            [org.iplantc/lein-iplant-rpm "1.4.1-SNAPSHOT"]]
   :ring {:handler notification-agent.core/app
          :init notification-agent.core/load-config-from-file
          :port 31320}
