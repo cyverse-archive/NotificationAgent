@@ -17,7 +17,7 @@
   [state]
   (if (= (:type state) "data")
     (:description state)
-    (:name state)))
+    (or (:display_name state) (:name state))))
 
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
@@ -34,7 +34,7 @@
   [email state]
   {:to        email
    :template  (email-template)
-   :subject   (str (:name state) " status changed.")
+   :subject   (str (get-descriptive-job-name state) " status changed.")
    :from-addr (email-from-address)
    :from-name (email-from-name)
    :values    {:analysisname          (:name state)
@@ -75,6 +75,7 @@
                     :resultfolderid (:output_dir state)
                     :user           (:user state)
                     :name           (:name state "")
+                    :display_name   (or (:display_name state) (:name state ""))
                     :startdate      (:submission_date state "")
                     :enddate        (:completion_date state "")
                     :analysis_id    (:analysis_id state "")
