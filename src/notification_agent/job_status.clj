@@ -20,7 +20,7 @@
   [state]
   (if (= (:type state) "data")
     (:description state)
-    (:name state)))
+    (or (:display_name state) (:name state))))
 
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
@@ -35,16 +35,16 @@
 (defn- format-email-request
   "Formats an e-mail request that can be sent to the iPlant e-mail service."
   [email state]
-  {:to email
-   :template (email-template)
-   :subject (str (:name state) " status changed.")
+  {:to        email
+   :template  (email-template)
+   :subject   (str (get-descriptive-job-name state) " status changed.")
    :from-addr (email-from-address)
    :from-name (email-from-name)
-   :values {:analysisname (:name state)
-            :analysisstatus (:status state)
-            :analysisstartdate (unparse-epoch-string (:submission_date state))
-            :analysisresultsfolder (:output_dir state)
-            :analysisdescription (:description state)}})
+   :values    {:analysisname          (:name state)
+               :analysisstatus        (:status state)
+               :analysisstartdate     (unparse-epoch-string (:submission_date state))
+               :analysisresultsfolder (:output_dir state)
+               :analysisdescription   (:description state)}})
 
 (defn- email-requested
   "Determines if e-mail notifications were requested for a job.  The 'notify'
@@ -66,26 +66,27 @@
 (defn- state-to-msg
   "Converts an object representing a job state to a notification message."
   [state]
-  {:type (:type state)
-   :user (:user state)
-   :deleted false
-   :seen false
-   :outputDir (:output_dir state)
+  {:type           (:type state)
+   :user           (:user state)
+   :deleted        false
+   :seen           false
+   :outputDir      (:output_dir state)
    :outputManifest (:output_manifest state)
-   :message {:id ""
-             :timestamp (current-time)
-             :text (job-status-msg state)}
-   :payload {:id (:uuid state)
-             :action "job_status_change"
-             :status (:status state)
-             :resultfolderid (:output_dir state)
-             :user (:user state)
-             :name (:name state "")
-             :startdate (:submission_date state "")
-             :enddate (:completion_date state "")
-             :analysis_id (:analysis_id state "")
-             :analysis_name (:analysis_name state "")
-             :description (:description state "")}})
+   :message        {:id        ""
+                    :timestamp (str (System/currentTimeMillis))
+                    :text      (job-status-msg state)}
+   :payload        {:id             (:uuid state)
+                    :action         "job_status_change"
+                    :status         (:status state)
+                    :resultfolderid (:output_dir state)
+                    :user           (:user state)
+                    :name           (:name state "")
+                    :display_name   (or (:display_name state) (:name state ""))
+                    :startdate      (:submission_date state "")
+                    :enddate        (:completion_date state "")
+                    :analysis_id    (:analysis_id state "")
+                    :analysis_name  (:analysis_name state "")
+                    :description    (:description state "")}})
 
 (defn- handle-completed-job
   "Handles a job status update request for a job that has completed and
