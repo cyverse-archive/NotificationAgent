@@ -1,5 +1,5 @@
 (ns notification-agent.job-status
-  (:use [clojure.string :only [lower-case]]
+  (:use [clojure.string :only [blank? lower-case]]
         [notification-agent.config]
         [notification-agent.common]
         [notification-agent.messages]
@@ -17,7 +17,7 @@
   [state]
   (if (= (:type state) "data")
     (:description state)
-    (or (:display_name state) (:name state))))
+    (first (remove blank? [(:display_name state) (:name state)]))))
 
 (defn- job-status-msg
   "Formats the status message for a job whose status has changed."
