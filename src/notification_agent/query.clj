@@ -4,6 +4,7 @@
        [clojure.string :only [blank? lower-case upper-case]]
        [slingshot.slingshot :only [throw+]])
  (:require [cheshire.core :as cheshire]
+           [clojure.string :as string]
            [clojure.tools.logging :as log]
            [notification-agent.db :as db]))
 
@@ -62,6 +63,12 @@
   [s]
   (keyword (lower-case s)))
 
+(defn- mangle-filter
+  "Converts a filter to lower case with underscores replacing spaces."
+  [filt]
+  (when-not (nil? filt)
+    (string/lower-case (string/replace filt #" " "_"))))
+
 (defn get-unseen-messages
   "Looks up all messages in the that have not been seen yet for a specified user."
   [query-params]
@@ -95,7 +102,7 @@
                :seen       (optional-boolean :seen query-params)
                :sort-field (as-keyword (:sortfield query-params "timestamp"))
                :sort-dir   (as-keyword (:sortdir query-params "desc"))
-               :filter     (:filter query-params)}]
+               :filter     (mangle-filter (:filter query-params))}]
     (get-messages* user query)))
 
 (defn count-messages
@@ -110,7 +117,7 @@
   [query-params]
   (let [user   (required-string :user query-params)
         query {:seen   (optional-boolean :seen query-params)
-               :filter (:filter query-params)}]
+               :filter (mangle-filter (:filter query-params))}]
     (count-messages* user query)))
 
 (defn last-ten-messages

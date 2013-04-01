@@ -6,6 +6,7 @@
   (:require [cheshire.core :as cheshire]
             [clj-http.client :as client]
             [clojure-commons.osm :as osm]
+            [clojure.string :as string]
             [clojure.tools.logging :as log]
             [notification-agent.db :as db])
   (:import [java.io IOException]
@@ -36,7 +37,8 @@
     (opt-update-in [:payload :startdate] fix-timestamp)
     (opt-update-in [:payload :enddate] fix-timestamp)
     (dissoc :email_request)
-    (assoc :seen seen :deleted deleted)))
+    (assoc :seen seen :deleted deleted)
+    (assoc :type (string/replace (:type state "") #"_" " "))))
 
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
