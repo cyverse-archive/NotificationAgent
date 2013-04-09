@@ -895,6 +895,121 @@ $ curl -X DELETE -s 'http://by-tor:65533/delete-all?user=ipctest' | python -mjso
 }
 ```
 
+### Adding A System Notification
+
+* Endpoint PUT /system
+
+This endpoint allows a client to add a new system notification. There are no query
+parameters, only JSON contained in the request body.
+
+This service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request should be a PUT. The request body should be
+JSON that looks something like the following:
+
+  {
+      "type" : "warning",
+      "message" : "This is a warning",
+      "deactivation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "activation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible" : false,
+      "logins-disabled" : false
+  }
+
+The 'type', 'message', and 'deactivation-date' keys are required. The rest are
+optional.
+
+The response body for a successful addition will look something like the following:
+
+  {
+      "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
+      "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
+      "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible": false,
+      "logins_disabled": false,
+      "message": "This is a warning",
+      "success": true,
+      "type": "warning",
+      "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+  }
+
+Sample curl:
+
+    curl -X PUT -d '<JSON from the above example>' http://127.0.0.1:31320/system
+
+### Getting a System Notification by UUID
+
+* Endpoint GET /system/<uuid>
+
+This endpoint allows a client to get information related to a specific system notification.
+There are no query parameters or request bodies associated with this request.
+
+This service returns a 200 status code with a JSON response body. Otherwise, it returns
+either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request should be a GET.
+
+The response body for a successful lookup will look something like the following:
+
+  {
+      "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
+      "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
+      "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible": false,
+      "logins_disabled": false,
+      "message": "This is a warning",
+      "success": true,
+      "type": "warning",
+      "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+  }
+
+Sample curl:
+
+    curl http://127.0.0.1:31320/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
+
+### Updating A System Notification
+
+* Endpoint POST /system/<uuid>
+
+This endpoint allows a client to update an existing system notification. There are
+no query parameters, only JSON contained in the request body.
+
+This service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request should be a POST. The request body should be
+JSON that looks something like the following:
+
+  {
+      "type" : "warning",
+      "message" : "This is a warning",
+      "deactivation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "activation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible" : false,
+      "logins-disabled" : false
+  }
+
+All keys are optional.
+
+The response body for a successful addition will look something like the following:
+
+  {
+      "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
+      "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
+      "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible": false,
+      "logins_disabled": false,
+      "message": "This is a warning",
+      "success": true,
+      "type": "warning",
+      "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+  }
+
+Sample curl:
+
+    curl -X POST -d '<JSON from the above example>' http://127.0.0.1:31320/system/<uuid>
+
 ### Unrecognized Service Path
 
 If the notification agent doesn't recognize a service path then it will respond

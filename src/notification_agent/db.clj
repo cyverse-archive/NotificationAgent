@@ -398,8 +398,8 @@
           String containing the milliseconds since the epoch.
       :activation-date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
-      :dismissible? - Boolean that tells whether a user can deactivate the notification.
-      :logins-disabled? - Boolean
+      :dismissible - Boolean that tells whether a user can deactivate the notification.
+      :logins-disabled - Boolean
       :message - The message that's displayed in the notification." 
   [uuid update-values]
   (system-map
