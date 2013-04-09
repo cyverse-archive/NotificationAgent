@@ -4,7 +4,8 @@
   (:require [cheshire.core :as cheshire]
             [clojure.tools.logging :as log]
             [clojure-commons.error-codes :as ce]
-            [clojure-commons.json :as cc-json])
+            [clojure-commons.json :as cc-json]
+            [clj-time.core :as time])
   (:import [java.io InputStream Reader]))
 
 (defn parse-body
@@ -59,3 +60,5 @@
       (merge {:error_code ce/ERR_ILLEGAL_ARGUMENT
               :details    details}
              exception-info-map)))))
+
+(defn millis-since-epoch [] (str (time/in-msecs (time/interval (time/epoch) (time/now)))))

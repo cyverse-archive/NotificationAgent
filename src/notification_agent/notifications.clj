@@ -21,11 +21,14 @@
   required-fields
   [[:type] [:user] [:subject]])
 
+(def ^{:private true} required-system-fields
+  [[:type] [:deactivation-date] [:message]])
+
 (defn- validate-request
   "Verifies that an incoming message request contains all of the required
    fields."
-  [msg]
-  (dorun (map (partial validate-field msg) required-fields)))
+  [msg & {:keys [req-fields] :or {req-fields required-fields}}]
+  (dorun (map (partial validate-field msg) req-fields)))
 
 (defn- request-to-msg
   "Converts a notification request to a full-fledged message that will be
@@ -69,4 +72,12 @@
   (let [request (parse-body body)]
     (validate-request request)
     (persist-and-send-msg (add-email-request (request-to-msg request)))
+    (success-resp)))
+
+(defn handle-system-notification-request
+  "Handles a system notification request."
+  [body]
+  (let [request (parse-body body)]
+    (validate-request request :req-fields required-system-fields)
+    (persist-system-msg request)
     (success-resp)))

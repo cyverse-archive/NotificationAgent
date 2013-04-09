@@ -7,7 +7,7 @@
                  [org.iplantc/clojure-commons "1.4.1-SNAPSHOT"]
                  [org.iplantc/kameleon "0.1.1-SNAPSHOT"]
                  [clj-http "0.5.5"]
-                 [clj-time "0.4.4"]
+                 [clj-time "0.5.0"]
                  [ring/ring-jetty-adapter "1.1.0"]
                  [org.codehaus.jackson/jackson-core-asl "1.9.5"]
                  [slingshot "0.10.3"]

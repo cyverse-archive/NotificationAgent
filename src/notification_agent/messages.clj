@@ -83,3 +83,26 @@
     (when-not (nil? email-request)
       (send-email-request uuid email-request))
     (send-msg (cheshire/encode (reformat-message uuid msg)))))
+
+(defn- optional-system-args
+  [msg]
+  (let [argseq (atom (seq))]
+    (if (contains? msg :activation-date)
+      (reset! argseq (conj @argseq [:activation-date (:activation-date msg)])))
+    (if (contains? msg :dismissable)
+      (reset! argseq (conj @argseq [:dismissable? (:dismissable msg)])))
+    (if (contains? msg :logins-disabled)
+      (reset! argseq (conj @argseq [:logins-disabled? (:logins-disabled msg)])))
+    (flatten @argseq)))
+
+(defn persist-system-msg
+  "Persists a system notification in the database."
+  [msg]
+  (let [type                (:type msg)
+        ddate               (:deactivation-date msg)
+        message             (:message msg)
+        insert-system-notif (partial db/insert-system-notification type ddate message)
+        sys-args            (optional-system-args msg)]
+    (if (pos? (count sys-args))
+      (apply insert-system-notif sys-args)
+      (insert-system-notif))))

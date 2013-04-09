@@ -3,10 +3,12 @@
         [korma.core]
         [kameleon.notification-entities]
         [notification-agent.config]
+        [notification-agent.common]
         [slingshot.slingshot :only [throw+ try+]])
   (:require [clojure-commons.error-codes :as ce]
             [clojure.string :as string]
-            [korma.sql.engine :as eng])
+            [korma.sql.engine :as eng]
+            [clj-time.core :as time])
   (:import [java.sql Timestamp]
            [java.util UUID]))
 
@@ -307,3 +309,89 @@
                    :template        template
                    :address         addr
                    :payload         payload})))
+
+(defn get-system-notification-type-id
+  "Returns a system notification type id by looking it up by name."
+  [sys-notif-type]
+  (:id (first (select system_notification_types (where {:name sys-notif-type})))))
+
+(defn insert-system-notification-type
+  "Adds a new system notification type."
+  [sys-notif-type]
+  (insert system_notification_types (values {:name sys-notif-type})))
+
+(defn insert-system-notification
+  "Inserts a system notification into the database.
+
+   Required Paramters
+      type - The system notification type.
+      deactivation-date - The date that the system notification is no longer valid. 
+          String containing the milliseconds since the epoch.
+      message - The message that's displayed in the notification.
+
+   Optional Parameters:
+      :activation-date -  The date that the system notificaiton becomes valid.
+          String containing the milliseconds since the epoch.
+      :dismissible? - Boolean that tells whether a user can deactivate the notification.
+      :logins-disabled? - Boolean"
+  [type deactivation-date message 
+   & {:keys [activation-date
+             dismissible? 
+             logins-disabled?]
+      :or   {activation-date  (millis-since-epoch)
+             dismissible?     false
+             logins-disabled? false}}]
+  (let [uuid (UUID/randomUUID)]
+    (insert system_notifications
+            (values {:uuid                         uuid
+                     :system_notification_type_id  (get-system-notification-type-id type)
+                     :activation_date              (parse-date activation-date)
+                     :deactivation_date            (parse-date deactivation-date)
+                     :message                      message
+                     :dismissible                  dismissible?
+                     :logins_disabled              logins-disabled?}))
+    (string/upper-case uuid)))
+
+(defn get-system-notification-by-uuid
+  "Selects system notifications that have a uuid of 'uuid'."
+  [uuid]
+  (first (select system_notifications 
+          (where {:uuid (parse-uuid uuid)}))))
+
+(defn- system-notification-update-map
+  [{:keys [type deactivation-date activation-date dismissible? logins-disabled? message]}]
+  (let [update-map   (atom {})
+        assoc-update #(reset! update-map (assoc @update-map %1 %2))] 
+    (when-not (nil? type)
+      (assoc-update :system_notification_type_id (get-system-notification-type-id type)))
+    (when-not (nil? deactivation-date)
+      (assoc-update :deactivation_date (parse-date deactivation-date)))
+    (when-not (nil? activation-date)
+      (assoc-update :activation_date (parse-date activation-date)))
+    (when-not (nil? dismissible?)
+      (assoc-update :dismissible dismissible?))
+    (when-not (nil? logins-disabled?)
+      (assoc-update :logins_disabled logins-disabled?))
+    (when-not (nil? message)
+      (assoc-update :message message))
+    @update-map))
+
+(defn update-system-notification
+  "Updates a system notification.
+
+   Required Parameters:
+      uuid - The system notification uuid.
+
+   Optional Parameters:
+      :type - The system notification type.
+      :deactivation-date - The date that the system notification is no longer valid. 
+          String containing the milliseconds since the epoch.
+      :activation-date -  The date that the system notificaiton becomes valid.
+          String containing the milliseconds since the epoch.
+      :dismissible? - Boolean that tells whether a user can deactivate the notification.
+      :logins-disabled? - Boolean
+      :message - The message that's displayed in the notification." 
+  [uuid & {:as update-values}]
+  (update system_notifications 
+          (set-fields (system-notification-update-map update-values)) 
+          (where {:uuid (parse-uuid uuid)})))
