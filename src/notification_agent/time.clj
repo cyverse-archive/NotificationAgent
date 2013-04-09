@@ -50,3 +50,9 @@
   "Converts a timestamp to the number of milliseconds since the epoch."
   [timestamp]
   (.getMillis (parse-timestamp timestamp)))
+
+(defn pg-timestamp->millis
+  "Converts a PostgreSQL timestamp to the number of milliseconds since the epoch.
+   Returns a string."
+  [pg-timestamp]
+  (str (.getTime pg-timestamp)))

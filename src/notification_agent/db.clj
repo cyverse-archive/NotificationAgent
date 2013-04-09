@@ -8,7 +8,7 @@
   (:require [clojure-commons.error-codes :as ce]
             [clojure.string :as string]
             [korma.sql.engine :as eng]
-            [clj-time.core :as time])
+            [notification-agent.time :as time])
   (:import [java.sql Timestamp]
            [java.util UUID]))
 
@@ -308,10 +308,17 @@
   [type-id]
   (:name (first (select system_notification_types (where {:id type-id})))))
 
+(defn- xform-timestamp
+  [ts]
+  (-> ts time/pg-timestamp->millis time/format-timestamp))
+
 (defn system-map
   [db-map]
   (-> db-map
-    (assoc :type (get-system-notification-type (:system_notification_type_id db-map)))
+    (assoc :type              (get-system-notification-type (:system_notification_type_id db-map))
+           :activation_date   (xform-timestamp (:activation_date db-map))
+           :deactivation_date (xform-timestamp (:deactivation_date db-map))
+           :date_created      (xform-timestamp (:date_created db-map)))
     (dissoc :id :system_notification_type_id)))
 
 (defn insert-system-notification-type
