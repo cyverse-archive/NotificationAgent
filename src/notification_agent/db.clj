@@ -342,12 +342,13 @@
       :logins-disabled? - Boolean"
   [type deactivation-date message 
    & {:keys [activation-date
-             dismissible? 
-             logins-disabled?]
+             dismissible 
+             logins-disabled]
       :or   {activation-date  (millis-since-epoch)
-             dismissible?     false
-             logins-disabled? false}}]
+             dismissible     false
+             logins-disabled false}}]
   (let [uuid (UUID/randomUUID)]
+    (println "dismissible: " dismissible)
     (system-map 
       (insert system_notifications
               (values {:uuid                         uuid
@@ -355,8 +356,8 @@
                        :activation_date              (parse-date activation-date)
                        :deactivation_date            (parse-date deactivation-date)
                        :message                      message
-                       :dismissible                  dismissible?
-                       :logins_disabled              logins-disabled?})))))
+                       :dismissible                  dismissible
+                       :logins_disabled              logins-disabled})))))
 
 (defn get-system-notification-by-uuid
   "Selects system notifications that have a uuid of 'uuid'."

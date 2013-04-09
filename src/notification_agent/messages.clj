@@ -87,12 +87,12 @@
 (defn- optional-insert-system-args
   [msg]
   (let [argseq (atom [])]
-    (if (contains? msg :activation-date)
+    (when (contains? msg :activation-date)
       (reset! argseq (conj @argseq [:activation-date (str (timestamp->millis (:activation-date msg)))])))
-    (if (contains? msg :dismissable)
-      (reset! argseq (conj @argseq [:dismissible? (:dismissible msg)])))
-    (if (contains? msg :logins-disabled)
-      (reset! argseq (conj @argseq [:logins-disabled? (:logins-disabled msg)])))
+    (when (contains? msg :dismissible)
+      (reset! argseq (conj @argseq [:dismissible (:dismissible msg)])))
+    (when (contains? msg :logins-disabled)
+      (reset! argseq (conj @argseq [:logins-disabled (:logins-disabled msg)])))
     (flatten @argseq)))
 
 (defn persist-system-msg
