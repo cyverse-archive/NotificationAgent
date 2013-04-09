@@ -84,7 +84,7 @@
       (send-email-request uuid email-request))
     (send-msg (cheshire/encode (reformat-message uuid msg)))))
 
-(defn- optional-system-args
+(defn- optional-insert-system-args
   [msg]
   (let [argseq (atom [])]
     (if (contains? msg :activation-date)
@@ -102,10 +102,14 @@
         ddate               (str (timestamp->millis (:deactivation-date msg))) 
         message             (:message msg)
         insert-system-notif (partial db/insert-system-notification type ddate message)
-        sys-args            (optional-system-args msg)]
+        sys-args            (optional-insert-system-args msg)]
     (if (pos? (count sys-args))
       (apply insert-system-notif sys-args)
       (insert-system-notif))))
 
 (defn get-system-msg [uuid] (db/get-system-notification-by-uuid uuid))
+
+(defn update-system-msg 
+  [uuid update-map]
+  (db/update-system-notification uuid update-map))
 

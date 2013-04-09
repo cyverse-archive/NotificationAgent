@@ -365,20 +365,22 @@
     first
     system-map))
 
+(defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
+
 (defn- system-notification-update-map
-  [{:keys [type deactivation-date activation-date dismissible? logins-disabled? message]}]
+  [{:keys [type deactivation-date activation-date dismissible logins-disabled message]}]
   (let [update-map   (atom {})
         assoc-update #(reset! update-map (assoc @update-map %1 %2))] 
     (when-not (nil? type)
       (assoc-update :system_notification_type_id (get-system-notification-type-id type)))
     (when-not (nil? deactivation-date)
-      (assoc-update :deactivation_date (parse-date deactivation-date)))
+      (assoc-update :deactivation_date (fix-date deactivation-date)))
     (when-not (nil? activation-date)
-      (assoc-update :activation_date (parse-date activation-date)))
-    (when-not (nil? dismissible?)
-      (assoc-update :dismissible dismissible?))
-    (when-not (nil? logins-disabled?)
-      (assoc-update :logins_disabled logins-disabled?))
+      (assoc-update :activation_date (fix-date activation-date)))
+    (when-not (nil? dismissible)
+      (assoc-update :dismissible dismissible))
+    (when-not (nil? logins-disabled)
+      (assoc-update :logins_disabled logins-disabled))
     (when-not (nil? message)
       (assoc-update :message message))
     @update-map))
@@ -398,7 +400,7 @@
       :dismissible? - Boolean that tells whether a user can deactivate the notification.
       :logins-disabled? - Boolean
       :message - The message that's displayed in the notification." 
-  [uuid & {:as update-values}]
+  [uuid update-values]
   (system-map
     (update system_notifications 
             (set-fields (system-notification-update-map update-values)) 

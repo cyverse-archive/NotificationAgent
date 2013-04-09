@@ -75,7 +75,12 @@
 (defn- get-system-notification
   "Handles retrieving a system notification by uuid."
   [uuid]
-  (trap :get-system-notificaiton #(handle-get-system-notif uuid)))
+  (trap :get-system-notification #(handle-get-system-notif uuid)))
+
+(defn- update-system-notification
+  "Handles updating a system notification."
+  [uuid body]
+  (trap :update-system-notification #(handle-update-system-notif uuid body)))
 
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")
@@ -90,7 +95,8 @@
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))
   (GET  "/last-ten-messages" [:as {params :params}] (last-ten params))
   (PUT "/system" [:as {body :body}] (add-system-notification body))
-  (GET "/system/:uuid" [uuid :as {body :body }] (get-system-notification uuid))
+  (GET "/system/:uuid" [uuid :as {body :body}] (get-system-notification uuid))
+  (POST "/system/:uuid" [uuid :as {body :body}] (update-system-notification uuid body))
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]

@@ -86,3 +86,10 @@
   [uuid]
   (parse-uuid uuid)
   (get-system-msg uuid))
+
+(defn handle-update-system-notif
+  "Handles updating a system notification."
+  [uuid body]
+  (let [request (parse-body body)]
+    (parse-uuid uuid)
+    (update-system-msg uuid request)))
