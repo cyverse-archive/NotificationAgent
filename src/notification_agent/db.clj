@@ -35,17 +35,6 @@
   (or (:id (first (select users (where {:username username}))))
       (:id (insert users (values {:username username})))))
 
-(defn- parse-uuid
-  "Parses a UUID in the standard format."
-  [uuid]
-  (and uuid
-       (try+
-        (UUID/fromString uuid)
-        (catch IllegalArgumentException _
-          (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
-                   :description "invalid UUID"
-                   :value       uuid})))))
-
 (defn- parse-date
   "Parses a date that is specified as a string representing the number of
    milliseconds since January 1, 1970."
@@ -315,6 +304,16 @@
   [sys-notif-type]
   (:id (first (select system_notification_types (where {:name sys-notif-type})))))
 
+(defn get-system-notification-type
+  [type-id]
+  (:name (first (select system_notification_types (where {:id type-id})))))
+
+(defn system-map
+  [db-map]
+  (-> db-map
+    (assoc :type (get-system-notification-type (:system_notification_type_id db-map)))
+    (dissoc :id :system_notification_type_id)))
+
 (defn insert-system-notification-type
   "Adds a new system notification type."
   [sys-notif-type]
@@ -342,21 +341,22 @@
              dismissible?     false
              logins-disabled? false}}]
   (let [uuid (UUID/randomUUID)]
-    (insert system_notifications
-            (values {:uuid                         uuid
-                     :system_notification_type_id  (get-system-notification-type-id type)
-                     :activation_date              (parse-date activation-date)
-                     :deactivation_date            (parse-date deactivation-date)
-                     :message                      message
-                     :dismissible                  dismissible?
-                     :logins_disabled              logins-disabled?}))
-    (string/upper-case uuid)))
+    (system-map 
+      (insert system_notifications
+              (values {:uuid                         uuid
+                       :system_notification_type_id  (get-system-notification-type-id type)
+                       :activation_date              (parse-date activation-date)
+                       :deactivation_date            (parse-date deactivation-date)
+                       :message                      message
+                       :dismissible                  dismissible?
+                       :logins_disabled              logins-disabled?})))))
 
 (defn get-system-notification-by-uuid
   "Selects system notifications that have a uuid of 'uuid'."
   [uuid]
-  (first (select system_notifications 
-          (where {:uuid (parse-uuid uuid)}))))
+  (-> (select system_notifications (where {:uuid (parse-uuid uuid)}))
+    first
+    system-map))
 
 (defn- system-notification-update-map
   [{:keys [type deactivation-date activation-date dismissible? logins-disabled? message]}]
@@ -392,6 +392,7 @@
       :logins-disabled? - Boolean
       :message - The message that's displayed in the notification." 
   [uuid & {:as update-values}]
-  (update system_notifications 
-          (set-fields (system-notification-update-map update-values)) 
-          (where {:uuid (parse-uuid uuid)})))
+  (system-map
+    (update system_notifications 
+            (set-fields (system-notification-update-map update-values)) 
+            (where {:uuid (parse-uuid uuid)}))))

@@ -74,10 +74,15 @@
     (persist-and-send-msg (add-email-request (request-to-msg request)))
     (success-resp)))
 
-(defn handle-system-notification-request
+(defn handle-add-system-notif
   "Handles a system notification request."
   [body]
   (let [request (parse-body body)]
     (validate-request request :req-fields required-system-fields)
-    (persist-system-msg request)
-    (success-resp)))
+    (success-resp (persist-system-msg request))))
+
+(defn handle-get-system-notif
+  "Handles getting a system notification."
+  [uuid]
+  (parse-uuid uuid)
+  (get-system-msg uuid))

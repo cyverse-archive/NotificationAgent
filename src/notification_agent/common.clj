@@ -6,7 +6,8 @@
             [clojure-commons.error-codes :as ce]
             [clojure-commons.json :as cc-json]
             [clj-time.core :as time])
-  (:import [java.io InputStream Reader]))
+  (:import [java.io InputStream Reader]
+           [java.util UUID]))
 
 (defn parse-body
   "Parses a JSON request body, throwing an IllegalArgumentException if the
@@ -34,7 +35,7 @@
      (success-resp {}))
   ([m]
      {:status       200
-      :body         (cheshire/encode (assoc m :success true))
+      :body         (if (map? m) (cheshire/encode (assoc m :success true)) (str m)) 
       :content-type :json}))
 
 (defn json-resp
@@ -62,3 +63,14 @@
              exception-info-map)))))
 
 (defn millis-since-epoch [] (str (time/in-msecs (time/interval (time/epoch) (time/now)))))
+
+(defn parse-uuid
+  "Parses a UUID in the standard format."
+  [uuid]
+  (and uuid
+       (try+
+        (UUID/fromString uuid)
+        (catch IllegalArgumentException _
+          (throw+ {:error_code  ce/ERR_BAD_OR_MISSING_FIELD
+                   :description "invalid UUID"
+                   :value       uuid})))))
