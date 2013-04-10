@@ -406,3 +406,12 @@
     (update system_notifications 
             (set-fields (system-notification-update-map update-values)) 
             (where {:uuid (parse-uuid uuid)}))))
+
+(defn delete-system-notification
+  "Deletes a system notification.
+
+   Required Parameters:
+     uuid - The system notification uuid."
+  [uuid]
+  (system-map
+    (delete system_notifications (where {:uuid (parse-uuid uuid)}))))

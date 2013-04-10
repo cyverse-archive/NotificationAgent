@@ -1010,6 +1010,36 @@ Sample curl:
 
     curl -X POST -d '<JSON from the above example>' http://127.0.0.1:31320/system/<uuid>
 
+### Deleting a System Notification by UUID
+
+* Endpoint DELETE /system/<uuid>
+
+This endpoint allows a client to delete a specific system notification.
+There are no query parameters or request bodies associated with this request.
+
+This service returns a 200 status code with a JSON response body. Otherwise, it returns
+either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request should be a DELETE.
+
+The response body for a successful lookup will look something like the following:
+
+  {
+      "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
+      "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
+      "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "dismissible": false,
+      "logins_disabled": false,
+      "message": "This is a warning",
+      "success": true,
+      "type": "warning",
+      "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+  }
+
+Sample curl:
+
+    curl -X DELETE http://127.0.0.1:31320/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
+
 ### Unrecognized Service Path
 
 If the notification agent doesn't recognize a service path then it will respond

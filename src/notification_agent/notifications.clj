@@ -93,3 +93,9 @@
   (let [request (parse-body body)]
     (parse-uuid uuid)
     (update-system-msg uuid request)))
+
+(defn handle-delete-system-notif
+  "Handles deleting a system notification."
+  [uuid]
+  (parse-uuid uuid)
+  (delete-system-msg uuid))

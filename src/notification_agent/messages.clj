@@ -108,8 +108,6 @@
       (insert-system-notif))))
 
 (defn get-system-msg [uuid] (db/get-system-notification-by-uuid uuid))
-
-(defn update-system-msg 
-  [uuid update-map]
-  (db/update-system-notification uuid update-map))
+(defn update-system-msg [uuid update-map] (db/update-system-notification uuid update-map))
+(defn delete-system-msg [uuid] (db/delete-system-notification uuid))
 

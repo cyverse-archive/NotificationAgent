@@ -82,6 +82,11 @@
   [uuid body]
   (trap :update-system-notification #(handle-update-system-notif uuid body)))
 
+(defn- delete-system-notification
+  "Handles deleting a system notification."
+  [uuid]
+  (trap :delete-system-notification #(handle-delete-system-notif uuid)))
+
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
@@ -97,6 +102,7 @@
   (PUT "/system" [:as {body :body}] (add-system-notification body))
   (GET "/system/:uuid" [uuid :as {body :body}] (get-system-notification uuid))
   (POST "/system/:uuid" [uuid :as {body :body}] (update-system-notification uuid body))
+  (DELETE "/system/:uuid" [uuid] (delete-system-notification uuid))
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]
