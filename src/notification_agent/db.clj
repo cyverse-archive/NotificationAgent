@@ -305,18 +305,24 @@
   (:id (first (select system_notification_types (where {:name sys-notif-type})))))
 
 (defn get-system-notification-type
+  "Returns a string containing the name of the system notification type
+   associated with the ID 'type-id'."
   [type-id]
   (:name (first (select system_notification_types (where {:id type-id})))))
 
 (defn get-system-notification-types
+  "Returns a list of all of the names of the system notification types."
   []
   (map :name (select system_notification_types)))
 
 (defn- xform-timestamp
+  "Converts a PostgreSQL timestamp to a more useable timestamp format."
   [ts]
   (-> ts time/pg-timestamp->millis time/format-timestamp))
 
 (defn system-map
+  "Cleans up a map representing a system notification. Removed database specific
+   information."
   [db-map]
   (-> db-map
     (assoc :type              (get-system-notification-type (:system_notification_type_id db-map))
@@ -364,23 +370,33 @@
 (defn get-system-notification-by-uuid
   "Selects system notifications that have a uuid of 'uuid'."
   [uuid]
-  (-> (select system_notifications (where {:uuid (parse-uuid uuid)}))
-    first
-    system-map))
+  (-> (select system_notifications (where {:uuid (parse-uuid uuid)})) first system-map))
 
-(defn get-active-system-notifications
+(defn active-system-notifs-query 
+  "Returns a composable query that can be used to return the active system
+   notifications for a particular user"
   [user]
   (let [now     (parse-date (millis-since-epoch))
         user-id (get-user-id user)]
-    (select system_notifications
-            (where {:activation_date [<= now]
-                    :deactivation_date [> now]})
-            (where 
-              (or {:dismissible false} 
-                  (and {:dismissible true} 
-                       {:id [not-in (subselect system_notification_acknowledgments 
-                                               (fields [:system_notification_id :id]) 
-                                               (where {:user_id user-id}))]}))))))
+    (-> (select* system_notifications)
+      (where {:activation_date [<= now]
+              :deactivation_date [> now]})
+      (where 
+        (or {:dismissible false} 
+            (and {:dismissible true} 
+                 {:id [not-in (subselect system_notification_acknowledgments 
+                                (fields [:system_notification_id :id]) 
+                                (where {:user_id user-id}))]}))))))
+
+(defn get-active-system-notifications
+  "Returns the active system notifications for a particular user."
+  [user]
+  (mapv system-map (-> (active-system-notifs-query user) (select))))
+
+(defn count-active-system-notifications
+  "Returns the number of active system notifications for a particular user."
+  [user]
+  (-> (active-system-notifs-query user) (aggregate (count :*) :count) (select) first :count))
 
 (defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
 
@@ -423,11 +439,17 @@
             (set-fields (system-notification-update-map update-values)) 
             (where {:uuid (parse-uuid uuid)}))))
 
+(defn- system-notif-id
+  [uuid]
+  (:id (first (select system_notifications (where {:uuid (parse-uuid uuid)})))))
+
 (defn delete-system-notification
   "Deletes a system notification.
 
    Required Parameters:
      uuid - The system notification uuid."
   [uuid]
+  (delete system_notification_acknowledgments 
+          (where {:system_notification_id (system-notif-id uuid)}))
   (system-map
     (delete system_notifications (where {:uuid (parse-uuid uuid)}))))

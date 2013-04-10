@@ -20,7 +20,8 @@
 (defn- count-messages*
   "Counts the number of matching messages."
   [user query]
-  (let [total (db/count-matching-messages user query)]
+  (let [total (+ (db/count-matching-messages user query)
+                 (db/count-active-system-notifications user))]
     (json-resp 200 (cheshire/encode {:total (str total)}))))
 
 (defn- get-messages*
