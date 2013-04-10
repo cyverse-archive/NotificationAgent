@@ -923,15 +923,18 @@ optional.
 The response body for a successful addition will look something like the following:
 
   {
+    "action" : "add-system-notification",
+    "success": true,
+    "system-notification" : {
       "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
       "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
       "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
       "dismissible": false,
       "logins_disabled": false,
       "message": "This is a warning",
-      "success": true,
       "type": "warning",
       "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+    }
   }
 
 Sample curl:
@@ -953,15 +956,18 @@ The HTTP method used for the request should be a GET.
 The response body for a successful lookup will look something like the following:
 
   {
+    "action" : "get-system-notification",
+    "success": true,
+    "system-notification" : {
       "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
       "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
       "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
       "dismissible": false,
       "logins_disabled": false,
       "message": "This is a warning",
-      "success": true,
       "type": "warning",
       "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+    }
   }
 
 Sample curl:
@@ -982,12 +988,16 @@ The HTTP method used for the request should be a POST. The request body should b
 JSON that looks something like the following:
 
   {
+    "action" : "update-system-notification",
+    "success" : true,
+    "system-notification" : {
       "type" : "warning",
       "message" : "This is a warning",
       "deactivation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
       "activation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
       "dismissible" : false,
       "logins-disabled" : false
+    }
   }
 
 All keys are optional.
@@ -1025,15 +1035,18 @@ The HTTP method used for the request should be a DELETE.
 The response body for a successful lookup will look something like the following:
 
   {
+    "action" : "delete-system-notification",
+    "success" : true,
+    "system-notification" : {
       "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
       "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
       "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
       "dismissible": false,
       "logins_disabled": false,
       "message": "This is a warning",
-      "success": true,
       "type": "warning",
       "uuid": "140ee541-9967-47cd-ba2b-3b17d8c19dae"
+    }
   }
 
 Sample curl:

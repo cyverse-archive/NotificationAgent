@@ -79,7 +79,7 @@
   [body]
   (let [request (parse-body body)]
     (validate-request request :req-fields required-system-fields)
-    (success-resp (persist-system-msg request))))
+    (persist-system-msg request)))
 
 (defn handle-get-system-notif
   "Handles getting a system notification."

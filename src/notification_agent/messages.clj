@@ -103,11 +103,19 @@
         message             (:message msg)
         insert-system-notif (partial db/insert-system-notification type ddate message)
         sys-args            (optional-insert-system-args msg)]
-    (if (pos? (count sys-args))
-      (apply insert-system-notif sys-args)
-      (insert-system-notif))))
+    {:system-notification
+     (if (pos? (count sys-args))
+       (apply insert-system-notif sys-args)
+       (insert-system-notif))}))
 
-(defn get-system-msg [uuid] (db/get-system-notification-by-uuid uuid))
-(defn update-system-msg [uuid update-map] (db/update-system-notification uuid update-map))
-(defn delete-system-msg [uuid] (db/delete-system-notification uuid))
+(defn get-system-msg 
+  [uuid] 
+  {:system-notification (db/get-system-notification-by-uuid uuid)})
 
+(defn update-system-msg 
+  [uuid update-map] 
+  {:system-notification (db/update-system-notification uuid update-map)})
+
+(defn delete-system-msg 
+  [uuid] 
+  {:system-notification (db/delete-system-notification uuid)})
