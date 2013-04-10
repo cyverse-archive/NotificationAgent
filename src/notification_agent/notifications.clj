@@ -99,3 +99,8 @@
   [uuid]
   (parse-uuid uuid)
   (delete-system-msg uuid))
+
+(defn handle-get-system-notif-types
+  "Handles getting all of the types of system notifications."
+  []
+  (get-system-msg-types))

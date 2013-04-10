@@ -1055,6 +1055,34 @@ Sample curl:
 
     curl -X DELETE http://127.0.0.1:31320/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
 
+### Getting All System Notification Types
+
+* Endpoint: GET /system-types
+
+This endpoint allows a client to request a list of all system notification types.
+There are no query parameters or request bodies associated with this request.
+
+The service returns a 200 status code with a JSON response body. Otherwise, it returns
+either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request is GET.
+
+The response body for a successful lookup will look something like the following:
+
+    {
+      "action" : "get-system-notification-types",
+      "status" : "success",
+      "types" : [
+          "announcement",
+          "maintenance",
+          "warning"
+      ]
+    }
+
+Sample curl:
+
+    curl http://127.0.0.1:31320/system-types
+
 ### Unrecognized Service Path
 
 If the notification agent doesn't recognize a service path then it will respond

@@ -119,3 +119,7 @@
 (defn delete-system-msg 
   [uuid] 
   {:system-notification (db/delete-system-notification uuid)})
+
+(defn get-system-msg-types
+  []
+  {:types (db/get-system-notification-types)})

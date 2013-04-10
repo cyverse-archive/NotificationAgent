@@ -308,6 +308,10 @@
   [type-id]
   (:name (first (select system_notification_types (where {:id type-id})))))
 
+(defn get-system-notification-types
+  []
+  (map :name (select system_notification_types)))
+
 (defn- xform-timestamp
   [ts]
   (-> ts time/pg-timestamp->millis time/format-timestamp))

@@ -87,6 +87,11 @@
   [uuid]
   (trap :delete-system-notification #(handle-delete-system-notif uuid)))
 
+(defn- get-system-notification-types
+  "Handles getting a list of system notification types."
+  []
+  (trap :get-system-notification-types #(handle-get-system-notif-types)))
+
 (defroutes notificationagent-routes
   (GET  "/" [] "Welcome to the notification agent!\n")
   (POST "/job-status" [:as {body :body}] (job-status body))
@@ -103,6 +108,7 @@
   (GET "/system/:uuid" [uuid :as {body :body}] (get-system-notification uuid))
   (POST "/system/:uuid" [uuid :as {body :body}] (update-system-notification uuid body))
   (DELETE "/system/:uuid" [uuid] (delete-system-notification uuid))
+  (GET "/system-types" [] (get-system-notification-types))
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]
