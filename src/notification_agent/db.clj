@@ -351,17 +351,15 @@
       :or   {activation-date  (millis-since-epoch)
              dismissible     false
              logins-disabled false}}]
-  (let [uuid (UUID/randomUUID)]
-    (println "dismissible: " dismissible)
-    (system-map 
-      (insert system_notifications
-              (values {:uuid                         uuid
-                       :system_notification_type_id  (get-system-notification-type-id type)
-                       :activation_date              (parse-date activation-date)
-                       :deactivation_date            (parse-date deactivation-date)
-                       :message                      message
-                       :dismissible                  dismissible
-                       :logins_disabled              logins-disabled})))))
+  (system-map 
+    (insert system_notifications
+            (values {:uuid                         (UUID/randomUUID)
+                     :system_notification_type_id  (get-system-notification-type-id type)
+                     :activation_date              (parse-date activation-date)
+                     :deactivation_date            (parse-date deactivation-date)
+                     :message                      message
+                     :dismissible                  dismissible
+                     :logins_disabled              logins-disabled}))))
 
 (defn get-system-notification-by-uuid
   "Selects system notifications that have a uuid of 'uuid'."
@@ -369,6 +367,20 @@
   (-> (select system_notifications (where {:uuid (parse-uuid uuid)}))
     first
     system-map))
+
+(defn get-active-system-notifications
+  [user]
+  (let [now     (parse-date (millis-since-epoch))
+        user-id (get-user-id user)]
+    (select system_notifications
+            (where {:activation_date [<= now]
+                    :deactivation_date [> now]})
+            (where 
+              (or {:dismissible false} 
+                  (and {:dismissible true} 
+                       {:id [not-in (subselect system_notification_acknowledgments 
+                                               (fields [:system_notification_id :id]) 
+                                               (where {:user_id user-id}))]}))))))
 
 (defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
 
