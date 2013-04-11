@@ -70,31 +70,35 @@
 (defn- admin-add-system-notification
   "Handles a request to add a system notification."
   [body]
-  (trap :add-system-notification #(handle-add-system-notif body)))
+  (trap :admin-add-system-notification #(handle-add-system-notif body)))
 
 (defn- admin-get-system-notification
   "Handles retrieving a system notification by uuid."
   [uuid]
-  (trap :get-system-notification #(handle-get-system-notif uuid)))
+  (trap :admin-get-system-notification #(handle-get-system-notif uuid)))
 
 (defn- admin-update-system-notification
   "Handles updating a system notification."
   [uuid body]
-  (trap :update-system-notification #(handle-update-system-notif uuid body)))
+  (trap :admin-update-system-notification #(handle-update-system-notif uuid body)))
 
 (defn- admin-delete-system-notification
   "Handles deleting a system notification."
   [uuid]
-  (trap :delete-system-notification #(handle-delete-system-notif uuid)))
+  (trap :admin-delete-system-notification #(handle-delete-system-notif uuid)))
 
 (defn- admin-get-system-notification-types
   "Handles getting a list of system notification types."
   []
-  (trap :get-system-notification-types #(handle-get-system-notif-types)))
+  (trap :admin-get-system-notification-types #(handle-get-system-notif-types)))
 
 (defn- user-system-messages
   [query]
-  (trap :user-system-messages #(get-system-messages query)))
+  (trap :system-messages #(get-system-messages query)))
+
+(defn- user-system-unseen-messages
+  [params]
+  (trap :system-unseen-messages #(get-unseen-system-messages params)))
 
 (defn- user-system-messages-seen
   [body query]
@@ -128,6 +132,9 @@
   ;;;DE UI facing APIs for system notifications
   (GET   "/system/messages" [:as {params :params}] 
          (user-system-messages params))
+  
+  (GET "/system/unseen-messages" [:as {params :params}]
+       (user-system-unseen-messages params))
   
   (POST  "/system/seen" [:as {body :body params :params}] 
          (user-system-messages-seen body params))

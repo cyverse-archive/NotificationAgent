@@ -144,3 +144,9 @@
   (let [user    (required-string :user query-params)
         results (db/get-active-system-notifications user)]
     (json-resp 200 (cheshire/encode {:system-messages results}))))
+
+(defn get-unseen-system-messages
+  [query-params]
+  (let [user (required-string :user query-params)
+        results (db/get-unseen-system-notifications user)]
+    (json-resp 200 (cheshire/encode {:system-messages results}))))

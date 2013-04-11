@@ -375,28 +375,48 @@
 (defn active-system-notifs-query 
   "Returns a composable query that can be used to return the active system
    notifications for a particular user"
-  [user]
-  (let [now     (parse-date (millis-since-epoch))
-        user-id (get-user-id user)]
+  []
+  (let [now (parse-date (millis-since-epoch))]
     (-> (select* system_notifications)
       (where {:activation_date [<= now]
-              :deactivation_date [> now]})
+              :deactivation_date [> now]}))))
+
+(defn user-system-notifs-query
+  [user]
+  (let [user-id (get-user-id user)] 
+    (-> (active-system-notifs-query)
       (where 
         (or {:dismissible false} 
             (and {:dismissible true} 
                  {:id [not-in (subselect system_notification_acknowledgments 
-                                (fields [:system_notification_id :id]) 
-                                (where {:user_id user-id}))]}))))))
+                                         (fields [:system_notification_id :id]) 
+                                         (where {:user_id [= user-id] 
+                                                 :deleted true}))]}))))))
 
 (defn get-active-system-notifications
   "Returns the active system notifications for a particular user."
   [user]
-  (mapv system-map (-> (active-system-notifs-query user) (select))))
+  (mapv system-map (-> (user-system-notifs-query user) (select))))
+
+(defn get-unseen-system-notifications
+  "Returns the active system notifications for a particular user."
+  [user]
+  (let [user-id (get-user-id user)]
+    (mapv 
+      system-map 
+      (-> (active-system-notifs-query) 
+        (where 
+          (or {:dismissible false} 
+              (and {:dismissible true} 
+                   {:id [not-in (subselect system_notification_acknowledgments 
+                                           (fields [:system_notification_id :id]) 
+                                           (where {:user_id user-id}))]})))
+        (select)))))
 
 (defn count-active-system-notifications
   "Returns the number of active system notifications for a particular user."
   [user]
-  (-> (active-system-notifs-query user) (aggregate (count :*) :count) (select) first :count))
+  (-> (user-system-notifs-query user) (aggregate (count :*) :count) (select) first :count))
 
 (defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
 
