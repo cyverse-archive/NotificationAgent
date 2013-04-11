@@ -895,9 +895,9 @@ $ curl -X DELETE -s 'http://by-tor:65533/delete-all?user=ipctest' | python -mjso
 }
 ```
 
-### Adding A System Notification
+### Admin - Adding A System Notification
 
-* Endpoint PUT /system
+* Endpoint PUT /admin/system
 
 This endpoint allows a client to add a new system notification. There are no query
 parameters, only JSON contained in the request body.
@@ -941,11 +941,11 @@ The response body for a successful addition will look something like the followi
 
 Sample curl:
 
-    curl -X PUT -d '<JSON from the above example>' http://127.0.0.1:31320/system
+    curl -X PUT -d '<JSON from the above example>' http://127.0.0.1:31320/admin/system
 
-### Getting a System Notification by UUID
+### Admin - Getting a System Notification by UUID
 
-* Endpoint GET /system/<uuid>
+* Endpoint GET /admin/system/<uuid>
 
 This endpoint allows a client to get information related to a specific system notification.
 There are no query parameters or request bodies associated with this request.
@@ -974,11 +974,11 @@ The response body for a successful lookup will look something like the following
 
 Sample curl:
 
-    curl http://127.0.0.1:31320/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
+    curl http://127.0.0.1:31320/admin/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
 
-### Updating A System Notification
+### Admin - Updating A System Notification
 
-* Endpoint POST /system/<uuid>
+* Endpoint POST /admin/system/<uuid>
 
 This endpoint allows a client to update an existing system notification. There are
 no query parameters, only JSON contained in the request body.
@@ -1020,11 +1020,11 @@ The response body for a successful update will look something like the following
 
 Sample curl:
 
-    curl -X POST -d '<JSON from the above example>' http://127.0.0.1:31320/system/<uuid>
+    curl -X POST -d '<JSON from the above example>' http://127.0.0.1:31320/admin/system/<uuid>
 
-### Deleting a System Notification by UUID
+### Admin - Deleting a System Notification by UUID
 
-* Endpoint DELETE /system/<uuid>
+* Endpoint DELETE /admin/system/<uuid>
 
 This endpoint allows a client to delete a specific system notification.
 There are no query parameters or request bodies associated with this request.
@@ -1053,11 +1053,11 @@ The response body for a successful deletion will look something like the followi
 
 Sample curl:
 
-    curl -X DELETE http://127.0.0.1:31320/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
+    curl -X DELETE http://127.0.0.1:31320/admin/system/140ee541-9967-47cd-ba2b-3b17d8c19daec
 
-### Getting All System Notification Types
+### Admin - Getting All System Notification Types
 
-* Endpoint: GET /system-types
+* Endpoint: GET /admin/system-types
 
 This endpoint allows a client to request a list of all system notification types.
 There are no query parameters or request bodies associated with this request.
@@ -1081,7 +1081,232 @@ The response body for a successful lookup will look something like the following
 
 Sample curl:
 
-    curl http://127.0.0.1:31320/system-types
+    curl http://127.0.0.1:31320/admin/system-types
+
+### Getting All System Notifications For A User
+
+* Endpoint: GET /system/messages
+
+This endpoint allows a client to request a list of all system notifications that
+are currently relevant for a user, regardless of whether they have been seen or
+not. This endpoint will not list system notifications that have been "soft"
+deleted by the user.
+
+This endpoint accepts a "user" query parameter that tells the service which
+user's system notifications to return.
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request is a GET.
+
+The response body for a successful lookup with look like the following:
+
+    {
+      "system-messages" : [
+        {
+          "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+          "dismissible" : true,
+          "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
+          "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+          "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
+          "type" : "warning",
+          "message" : "I like cake",
+          "logins_disabled" : false
+        }
+      ]
+    }
+
+Sample curl:
+
+    curl http://127.0.0.1:31320/system/messages?user=wregglej
+
+### Getting All Unseen System Notifications For A User
+
+* Endpoint: GET /system/unseen-messages
+
+This endpoint allows a client to request a list of all system notifications that
+are currently unseen for a user. This endpoint will not list system notifications
+that have been "soft" deleted by the user.
+
+This endpoint accepts a "user" query parameter that tells the service which
+user's system notifications to return.
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request is a GET.
+
+The response body for a successful lookup with look like the following:
+
+    {
+      "system-messages" : [
+        {
+          "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+          "dismissible" : true,
+          "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
+          "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+          "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
+          "type" : "warning",
+          "message" : "I like cake",
+          "logins_disabled" : false
+        }
+      ]
+    }
+
+Sample curl:
+
+    curl http://127.0.0.1:31320/system/unseen-messages?user=wregglej
+
+### Marking System Notifications As Seen By A User
+
+* Endpoint: POST /system/seen
+
+This endpoint allows a client to specify a list of system notifications that
+should be marked as seen by the specified user.
+
+This endpoint accepts a "user" query parameter that tells the service which
+user's system notifications to return.
+
+The HTTP Method used for the request is a POST.
+
+The body of the request should be JSON that looks like the following:
+
+    {
+      "uuids" : [
+        "23705cb9-2a46-4cc3-80de-989d86ecbd01",
+        "933ab627-5d1e-4cd9-b6e8-ff5462243637"
+      ]
+    }
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The response body for a successful lookup with look like the following:
+
+    {
+      "success" : true,
+      "count" : "2"
+    }
+
+The "count" field contains the number of system messages that are still unseen
+by the user. That value may never go down to 0 if there are system messages
+in the system that are not dismissible.
+
+Passing the same UUIDs in to the endpoint multiple times is simply a no-op and
+does not return any errors.
+
+Sample curl:
+
+    curl -d '{"uuids" : ["23705cb9-2a46-4cc3-80de-989d86ecbd01", "933ab627-5d1e-4cd9-b6e8-ff5462243637"]}' http://127.0.0.1:31320/system/seen?user=wregglej
+
+### Marking All System Notifications As Seen By A User
+
+* Endpoint: POST /system/mark-all-seen
+
+This endpoint allows a client to mark all of the applicable system notifications
+as seen by a user. This does NOT apply to system notifications that have
+"dismissible" set to false, which is the default.
+
+The HTTP Method used for the request is a POST.
+
+This endpoint has no query parameters, but accepts a JSON-encoded request body
+that should look something like the following:
+
+    {
+      "user" : "wregglej"
+    }
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The response body for a successful lookup with look like the following:
+
+    {
+      "success" : true,
+      "count" : "2"
+    }
+
+The "count" field contains the number of system messages that are still unseen
+by the user. That value may never go down to 0 if there are system messages
+in the system that are not dismissible.
+
+Sample curl:
+
+    curl -d '{"user" : "wregglej"}' http://127.0.0.1:31320/system/mark-all-seen
+
+### Soft Deleting System Notifications For A User
+
+* Endpoint: POST /system/delete
+
+This endpoint allows a client to soft delete a batch of system notifications
+for a user. This does not remove them from the database, but will prevent
+the system notification from showing up in any of the non-admin endpoints
+that return system notifications for a user. This does not apply to system
+notifications that have "dismissible" set to false, which is the default.
+Also, any notifications that are marked as deleted by a user are also marked
+as seen by the user.
+
+This endpoint accepts a "user" query parameter that tells the service which
+user's system notifications to delete.
+
+The HTTP method used for the request is POST.
+
+The body of the request should be JSON that looks like the following:
+
+    {
+      "uuids" : [
+        "23705cb9-2a46-4cc3-80de-989d86ecbd01",
+        "933ab627-5d1e-4cd9-b6e8-ff5462243637"
+      ]
+    }
+
+The response body for a successful deletion with look like the following:
+
+    {
+      "success" : true,
+      "count" : "2"
+    }
+
+The count field tells the number of applicable system notifications for
+the user that made the request, regardless of whether the notifications
+have been seen or not.
+
+Sample curl:
+
+    curl -d '{"uuids" : ["23705cb9-2a46-4cc3-80de-989d86ecbd01", "933ab627-5d1e-4cd9-b6e8-ff5462243637"]}' http://127.0.0.1:31320/system/delete?user=wregglej
+
+### Soft Deleting All System Notifications For A User
+
+* Endpoint: DELETE /system/delete-all
+
+This endpoint allows a client to soft delete all system notifications
+for a user. This does not remove them from the database, but will prevent
+the system notifications from showing up in any of the non-admin endpoints
+that return system notifications for a user. This does not apply to system
+notifications that have "dismissible" set to false, which is the default.
+Also, any notifications that are marked as deleted by a user are also marked
+as seen by the user.
+
+This endpoint accepts a "user" query parameter that tells the service which
+user's system notifications to delete.
+
+The HTTP method used for the request is DELETE.
+
+The response body for a successful deletion with look like the following:
+
+    {
+      "success" : true,
+      "count" : "2"
+    }
+
+The count field tells the number of applicable system notifications for
+the user that made the request, regardless of whether the notifications
+have been seen or not.
+
+Sample curl:
+
+    curl -X DELETE http://127.0.0.1:31320/system/delete-all?user=wregglej
 
 ### Unrecognized Service Path
 

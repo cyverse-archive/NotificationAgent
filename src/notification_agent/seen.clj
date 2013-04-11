@@ -40,11 +40,11 @@
   (let [uuids (:uuids (parse-body body))]
     (validate-uuids uuids body)
     (db/mark-system-notifications-seen user uuids)
-    (success-resp {:count (str (db/count-active-system-notifications user))})))
+    (success-resp {:count (str (db/count-unseen-system-notifications user))})))
 
 (defn mark-all-system-messages-seen
   "Marks all system notifications as seen for a user."
   [body]
   (let [user (validate-user (:user (parse-body body)))]
     (db/mark-all-system-notifications-seen user)
-    (success-resp {:count (str (db/count-active-system-notifications user))})))
+    (success-resp {:count (str (db/count-unseen-system-notifications user))})))

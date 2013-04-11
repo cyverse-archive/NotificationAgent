@@ -398,20 +398,26 @@
   [user]
   (mapv system-map (-> (user-system-notifs-query user) (select))))
 
+(defn unseen-system-notifs-query
+  [user]
+  (let [user-id (get-user-id user)]
+    (-> (active-system-notifs-query) 
+      (where 
+        (or {:dismissible false} 
+            (and {:dismissible true} 
+                 {:id [not-in (subselect system_notification_acknowledgments 
+                                         (fields [:system_notification_id :id]) 
+                                         (where {:user_id user-id}))]}))))))
+
 (defn get-unseen-system-notifications
   "Returns the active system notifications for a particular user."
   [user]
-  (let [user-id (get-user-id user)]
-    (mapv 
-      system-map 
-      (-> (active-system-notifs-query) 
-        (where 
-          (or {:dismissible false} 
-              (and {:dismissible true} 
-                   {:id [not-in (subselect system_notification_acknowledgments 
-                                           (fields [:system_notification_id :id]) 
-                                           (where {:user_id user-id}))]})))
-        (select)))))
+  (mapv system-map (-> (unseen-system-notifs-query user) (select))))
+
+(defn count-unseen-system-notifications
+  "Returns the count of the unseen system notifications for a user."
+  [user]
+  (-> (unseen-system-notifs-query user) (aggregate (count :*) :count) (select) first :count))
 
 (defn count-active-system-notifications
   "Returns the number of active system notifications for a particular user."
