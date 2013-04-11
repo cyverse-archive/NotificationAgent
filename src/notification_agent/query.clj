@@ -20,15 +20,17 @@
 (defn- count-messages*
   "Counts the number of matching messages."
   [user query]
-  (let [total (+ (db/count-matching-messages user query)
-                 (db/count-active-system-notifications user))]
-    (json-resp 200 (cheshire/encode {:total (str total)}))))
+  (let [total          (db/count-matching-messages user query)
+        total-sys-msgs (db/count-active-system-notifications user)]
+    (json-resp 200 (cheshire/encode {:total                 (str total)
+                                     :total-system-messages (str total-sys-msgs)}))))
 
 (defn- get-messages*
   "Retrieves notification messages."
   [user query]
   (let [body {:total    (str (db/count-matching-messages user query))
-              :messages (map reformat (db/find-matching-messages user query))}]
+              :messages (map reformat (db/find-matching-messages user query))
+              :system-messages (db/get-active-system-notifications user)}]
     (json-resp 200 (cheshire/encode body))))
 
 (defn- required-string
@@ -135,3 +137,10 @@
                      (sort-by #(get-in % [:message :timestamp])))]
     (json-resp 200 (cheshire/encode {:total    (str total)
                                      :messages results}))))
+
+(defn get-system-messages
+  "Obtains the system messages that apply to a user."
+  [query-params]
+  (let [user    (required-string :user query-params)
+        results (db/get-active-system-notifications user)]
+    (json-resp 200 (cheshire/encode {:system-messages results}))))

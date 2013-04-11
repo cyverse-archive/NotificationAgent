@@ -32,3 +32,19 @@
   (let [user (validate-user (:user (parse-body body)))]
     (db/mark-matching-notifications-seen user {:seen false})
     (successful-seen-response user)))
+
+(defn mark-system-messages-seen
+  "Marks one or more system notifications as seen."
+  [body {:keys [user]}]
+  (validate-user user)
+  (let [uuids (:uuids (parse-body body))]
+    (validate-uuids uuids body)
+    (db/mark-system-notifications-seen user uuids)
+    (success-resp {:count (str (db/count-active-system-notifications user))})))
+
+(defn mark-all-system-messages-seen
+  "Marks all system notifications as seen for a user."
+  [body]
+  (let [user (validate-user (:user (parse-body body)))]
+    (db/mark-all-system-notifications-seen user)
+    (success-resp {:count (str (db/count-active-system-notifications user))})))

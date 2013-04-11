@@ -453,3 +453,63 @@
           (where {:system_notification_id (system-notif-id uuid)}))
   (system-map
     (delete system_notifications (where {:uuid (parse-uuid uuid)}))))
+
+(defn- acks
+  [query-map]
+  (select system_notification_acknowledgments (where query-map)))
+
+(defn- seen?
+  [user uuid]
+  (pos? (count (acks {:system_notification_id (system-notif-id uuid)
+                      :user_id                (get-user-id user)}))))
+
+(defn- deleted?
+  [user uuid]
+  (pos? (count (acks {:system_notification_id (system-notif-id uuid)
+                      :deleted                true
+                      :user_id                (get-user-id user)}))))
+
+(defn seen
+  [user uuid]
+  (insert system_notification_acknowledgments 
+          (values {:user_id                (get-user-id user)
+                   :system_notification_id (system-notif-id uuid)
+                   :deleted                false
+                   :date_acknowledged      (parse-date (millis-since-epoch))})))
+
+(defn delete-msg
+  [user uuid]
+  (update system_notification_acknowledgments
+          (set-fields {:deleted true})
+          (where {:user_id                (get-user-id user)
+                  :system_notification_id (system-notif-id uuid)})))
+
+(defn dismissible?
+  [uuid]
+  (:dismissible (get-system-notification-by-uuid uuid)))
+
+(defn mark-system-notifications-seen
+  [user uuids]
+  (doseq [uuid (map str uuids)]
+    (when (dismissible? uuid)
+      (when-not (seen? user uuid)
+        (seen user uuid)))))
+
+(defn mark-all-system-notifications-seen
+  [user]
+  (let [uuids (map :uuid (get-active-system-notifications user))]
+    (mark-system-notifications-seen user uuids)))
+
+(defn soft-delete-system-notifications
+  [user uuids]
+  (doseq [uuid (map str uuids)]
+    (when (dismissible? uuid)
+      (when-not (seen? user uuid)
+        (seen user uuid))
+      (when-not (deleted? user uuid)
+        (delete-msg user uuid)))))
+
+(defn soft-delete-all-system-notifications
+  [user]
+  (let [uuids (map :uuid (get-active-system-notifications user))]
+    (soft-delete-system-notifications user uuids)))
