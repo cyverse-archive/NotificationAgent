@@ -318,7 +318,7 @@
 (defn- xform-timestamp
   "Converts a PostgreSQL timestamp to a more useable timestamp format."
   [ts]
-  (-> ts time/pg-timestamp->millis time/format-timestamp))
+  (-> ts time/pg-timestamp->millis))
 
 (defn system-map
   "Cleans up a map representing a system notification. Removed database specific
