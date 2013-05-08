@@ -38,7 +38,7 @@
     (opt-update-in [:payload :enddate] fix-timestamp)
     (dissoc :email_request)
     (assoc :seen seen :deleted deleted)
-    (assoc :type (string/replace (:type state "") #"_" " "))))
+    (assoc :type (string/replace (or (:type state) "") #"_" " "))))
 
 (defn- send-email-request
   "Sends an e-mail request to the iPlant e-mail service."
@@ -99,7 +99,7 @@
   "Persists a system notification in the database."
   [msg]
   (let [type                (:type msg)
-        ddate               (str (timestamp->millis (:deactivation-date msg))) 
+        ddate               (str (timestamp->millis (:deactivation-date msg)))
         message             (:message msg)
         insert-system-notif (partial db/insert-system-notification type ddate message)
         sys-args            (optional-insert-system-args msg)]
@@ -108,16 +108,16 @@
        (apply insert-system-notif sys-args)
        (insert-system-notif))}))
 
-(defn get-system-msg 
-  [uuid] 
+(defn get-system-msg
+  [uuid]
   {:system-notification (db/get-system-notification-by-uuid uuid)})
 
-(defn update-system-msg 
-  [uuid update-map] 
+(defn update-system-msg
+  [uuid update-map]
   {:system-notification (db/update-system-notification uuid update-map)})
 
-(defn delete-system-msg 
-  [uuid] 
+(defn delete-system-msg
+  [uuid]
   {:system-notification (db/delete-system-notification uuid)})
 
 (defn get-system-msg-types
