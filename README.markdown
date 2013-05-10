@@ -1102,20 +1102,23 @@ The HTTP method used for the request is a GET.
 
 The response body for a successful lookup with look like the following:
 
+```json
+{
+  "system-messages" : [
     {
-      "system-messages" : [
-        {
-          "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
-          "dismissible" : true,
-          "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
-          "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
-          "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
-          "type" : "warning",
-          "message" : "I like cake",
-          "logins_disabled" : false
-        }
-      ]
+      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "dismissible" : true,
+      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
+      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
+      "type" : "warning",
+      "message" : "I like cake",
+      "acknowledged" : false,
+      "logins_disabled" : false
     }
+  ]
+}
+```
 
 Sample curl:
 
@@ -1139,20 +1142,23 @@ The HTTP method used for the request is a GET.
 
 The response body for a successful lookup with look like the following:
 
+```json
+{
+  "system-messages" : [
     {
-      "system-messages" : [
-        {
-          "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
-          "dismissible" : true,
-          "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
-          "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
-          "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
-          "type" : "warning",
-          "message" : "I like cake",
-          "logins_disabled" : false
-        }
-      ]
+      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "dismissible" : true,
+      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
+      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
+      "type" : "warning",
+      "message" : "I like cake",
+      "acknowledged" : true,
+      "logins_disabled" : false
     }
+  ]
+}
+```
 
 Sample curl:
 

@@ -372,47 +372,100 @@
   [uuid]
   (-> (select system_notifications (where {:uuid (parse-uuid uuid)})) first system-map))
 
-(defn active-system-notifs-query 
-  "Returns a composable query that can be used to return the active system
-   notifications for a particular user"
-  []
-  (let [now (parse-date (millis-since-epoch))]
-    (-> (select* system_notifications)
-      (where {:activation_date [<= now]
-              :deactivation_date [> now]}))))
-
+(defn- user-sys-msg-ack-subquery
+  [user]
+  (subselect system_notification_acknowledgments
+    (with users)
+    (where {:users.username user})))
+  
 (defn user-system-notifs-query
-  [user]
-  (let [user-id (get-user-id user)] 
-    (-> (active-system-notifs-query)
-      (where 
-        (or {:dismissible false} 
-            (and {:dismissible true} 
-                 {:id [not-in (subselect system_notification_acknowledgments 
-                                         (fields [:system_notification_id :id]) 
-                                         (where {:user_id [= user-id] 
-                                                 :deleted true}))]}))))))
+  "This function builds the database query to find all of the active system notifications for a 
+   given user.
 
-(defn get-active-system-notifications
-  "Returns the active system notifications for a particular user."
+   Parameters:
+     user: the name of the user
+
+   Returns:
+     It returns the a composible query that generates a list of records of the following form.
+     
+       :uuid - the identity of the notification
+       :type - the type of system notification
+       :date_create - the SQL date when the notification was created
+       :activation_date - the SQL date when the notification will become available for the user to
+                          see.
+       :deactivation_date - the SQL date when the notification will no longer be available for the
+                            user to see.
+       :date_acknowledged - The SQL date when the user acknowledged the notification. This will be 
+                       nil if the user has not acknowledged it.
+       :message - The message body
+       :dismissible - A flag indicating whether or not the user can dismiss the message.
+       :logins_disabled - A flag indicating whether or not the user can log into the discovery 
+                          environment."
   [user]
-  (mapv system-map (-> (user-system-notifs-query user) (select))))
+  (let [now (parse-date (millis-since-epoch))]
+	  (-> (select* system_notifications) 
+	    (with system_notification_types) 
+	    (join :left [(user-sys-msg-ack-subquery user) :sma] (= :id :sma.system_notification_id))
+	    (where (and {:activation_date   [<= now] 
+	                 :deactivation_date [> now]}
+	                (or {:sma.deleted false}
+	                    {:sma.deleted nil}))))))
 
 (defn unseen-system-notifs-query
   [user]
-  (let [user-id (get-user-id user)]
-    (-> (active-system-notifs-query) 
-      (where 
-        (or {:dismissible false} 
-            (and {:dismissible true} 
-                 {:id [not-in (subselect system_notification_acknowledgments 
-                                         (fields [:system_notification_id :id]) 
-                                         (where {:user_id user-id}))]}))))))
+  (-> (user-system-notifs-query user) 
+    (where {:sma.date_acknowledged nil})))
+ 
+(defn- add-system-notif-fields
+  [query]
+  (fields query 
+    :uuid 
+    [:system_notification_types.name :type] 
+    :date_created 
+    :activation_date 
+    :deactivation_date 
+    [:sma.date_acknowledged :date_acknowledged]
+    :message
+    :dismissible 
+    :logins_disabled))
+
+(defn- ack-aware-system-map
+  "This function converts a system notification record received from the database into the expected 
+   form for transmission.
+
+   Unlike system-map, this version assumes that the :type of the notification is already in the db
+   record. It also assumes that the ;date_acknowledged field is in the record and computes the 
+   :acknowledged flag from that field.
+
+   Parameters:
+     db-sys-note - the system notification record received from the database
+
+   Returns:
+     The system notification record prepared for transmission."
+  [db-sys-note]
+  (-> db-sys-note
+    (assoc :activation_date   (xform-timestamp (:activation_date db-sys-note))
+           :deactivation_date (xform-timestamp (:deactivation_date db-sys-note))
+           :date_created      (xform-timestamp (:date_created db-sys-note))
+           :acknowledged      (not= nil (:date_acknowledged db-sys-note)))
+    (dissoc :date_acknowledged)))
+
+(defn get-active-system-notifications
+  "This function retrieves the set of active system notifications for a given user. It returns the
+   transmission form of the system notification records.
+
+   Parameters:
+     user - The name of the user of interest
+
+   Returns:
+     The system notification records prepared for transmission."
+  [user]
+  (mapv ack-aware-system-map (-> (user-system-notifs-query user) add-system-notif-fields select)))
 
 (defn get-unseen-system-notifications
   "Returns the active system notifications for a particular user."
   [user]
-  (mapv system-map (-> (unseen-system-notifs-query user) (select))))
+  (mapv ack-aware-system-map (-> (unseen-system-notifs-query user) add-system-notif-fields select)))
 
 (defn count-unseen-system-notifications
   "Returns the count of the unseen system notifications for a user."

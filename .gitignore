@@ -15,3 +15,5 @@
 /notificationagent
 /notificationagent*.tar.gz
 /notificationagent.spec
+/.lein-repl-history
+/.settings
