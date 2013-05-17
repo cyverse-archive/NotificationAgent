@@ -380,7 +380,7 @@
   
 (defn user-system-notifs-query
   "This function builds the database query to find all of the active system notifications for a 
-   given user.
+   given user that have not been dismissed.
 
    Parameters:
      user: the name of the user
@@ -407,9 +407,8 @@
 	    (with system_notification_types) 
 	    (join :left [(user-sys-msg-ack-subquery user) :sma] (= :id :sma.system_notification_id))
 	    (where (and {:activation_date   [<= now] 
-	                 :deactivation_date [> now]}
-	                (or {:sma.deleted false}
-	                    {:sma.deleted nil}))))))
+                   :deactivation_date [> now]}
+                  (raw "(sma.state IS NULL) OR (sma.state <> 'dismissed')"))))))
 
 (defn unseen-system-notifs-query
   [user]
@@ -544,24 +543,24 @@
 
 (defn- deleted?
   [user uuid]
-  (pos? (count (acks {:system_notification_id (system-notif-id uuid)
-                      :deleted                true
-                      :user_id                (get-user-id user)}))))
+  (pos? (count (select system_notification_acknowledgments 
+                       (where (and {:system_notification_id (system-notif-id uuid)
+                                    :user_id                (get-user-id user)}
+                                   (raw "state = 'dismissed'")))))))
 
 (defn seen
   [user uuid]
-  (insert system_notification_acknowledgments 
-          (values {:user_id                (get-user-id user)
-                   :system_notification_id (system-notif-id uuid)
-                   :deleted                false
-                   :date_acknowledged      (parse-date (millis-since-epoch))})))
+  (exec-raw ["INSERT INTO system_notification_acknowledgments VALUES (?, ?, 'acknowledged', ?)"
+             [(get-user-id user)
+              (system-notif-id uuid)
+              (parse-date (millis-since-epoch))]]))
 
 (defn delete-msg
   [user uuid]
-  (update system_notification_acknowledgments
-          (set-fields {:deleted true})
-          (where {:user_id                (get-user-id user)
-                  :system_notification_id (system-notif-id uuid)})))
+  (exec-raw ["UPDATE system_notification_acknowledgments 
+                SET state = 'dismissed' 
+                WHERE user_id = ? AND system_notification_id = ?"
+             [(get-user-id user) (system-notif-id uuid)]]))
 
 (defn dismissible?
   [uuid]
