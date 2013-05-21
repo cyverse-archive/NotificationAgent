@@ -15,7 +15,7 @@
   :plugins [[lein-ring "0.6.4"]
             [swank-clojure "1.4.2"]
             [lein-marginalia "0.7.0"]
-            [org.iplantc/lein-iplant-rpm "1.4.1-SNAPSHOT"]]
+            [org.iplantc/lein-iplant-rpm "1.4.3-SNAPSHOT"]]
   :ring {:handler notification-agent.core/app
          :init notification-agent.core/load-config-from-file
          :port 31320}
