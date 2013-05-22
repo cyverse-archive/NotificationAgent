@@ -671,9 +671,11 @@ that of the /messages and /unseen-messages endpoints.
 
 * Endpoint: GET /count-messages
 
-In some cases, it's useful to be able to obtain the number of messages that
-match a set of criteria without retrieving the messages themselves. This
-endpoint is provided for this purpose.
+This end-point returns count statistics for the messages that are currently 
+active. It counts for both system message counts and a user message count. For 
+the system messages, it returns the total number of messages, the total number 
+of unseen messages and the total number of new messages. The user messages may 
+be filtered by a set of criteria. Optional parameters provide this filtering.
 
 This endpoint takes three query-string parameters:
 
@@ -715,31 +717,43 @@ This endpoint takes three query-string parameters:
     </tbody>
 </table>
 
-The response body consists of a JSON object with a single field, `total`, that
-contains the number of messages that match the criteria specified in the query
-string:
+The response body consists of a JSON object with a four fields:
 
 ```json
 {
-    "total": message-count
+    "user-total":          count,
+    "system-total":        count,
+    "system-total-new":    count,
+    "system-total-unseen": count 
 }
 ```
+
+* `user-total` contains the number of user messages that match the criteria specified in the query string. 
+* `system-total` contains the number of system messages that are active and have not been dismissed by the user. 
+* `system-total-new` contains the number of system messages that have not been marked as received by the user.
+* `system-total-unseen` contains the number of system message that have not been marked as seen by the user.
 
 Here are some examples:
 
 ```
 $ curl -s "http://by-tor:65533/count-messages?user=ipctest" | python -mjson.tool
 {
-    "total": "409"
+    "user-total":          409,
+    "system-total":         10,
+    "system-total-new":      0,
+    "system-total-unseen":   1
 }
 ```
 
-In this example, all messages for the user, `ipctest`, are counted.
+In this example, all user messages for the user, `ipctest`, are counted.
 
 ```
 $ curl -s "http://by-tor:65533/count-messages?user=ipctest&filter=data" | python -mjson.tool
 {
-    "total": "91"
+    "user-total":          91,
+    "system-total":        10,
+    "system-total-new":     0,
+    "system-total-unseen":  1
 }
 ```
 
@@ -748,7 +762,10 @@ In this example, all data messages for the user, `ipctest`, are counted.
 ```
 $ curl -s "http://by-tor:65533/count-messages?user=ipctest&filter=data&seen=false" | python -mjson.tool
 {
-    "total": "0"
+    "user-total":           0,
+    "system-total":        10,
+    "system-total-new":     0,
+    "system-total-unseen":  1
 }
 ```
 

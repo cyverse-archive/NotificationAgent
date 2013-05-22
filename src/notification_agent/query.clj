@@ -18,12 +18,16 @@
                     :deleted deleted))
 
 (defn- count-messages*
-  "Counts the number of matching messages."
-  [user query]
-  (let [total          (db/count-matching-messages user query)
-        total-sys-msgs (db/count-active-system-notifications user)]
-    (json-resp 200 (cheshire/encode {:total                 (str total)
-                                     :total-system-messages (str total-sys-msgs)}))))
+  "Counts the number of matching messages. The user messages are filtered with the provided query."
+  [user user-query]
+  (let [user-total       (db/count-matching-messages user user-query)
+        sys-total        (db/count-active-system-notifications user)
+        new-sys-total    (db/count-new-system-notifications user)
+        unseen-sys-total (db/count-unseen-system-notifications user)]
+    (json-resp 200 (cheshire/encode {:user-total          user-total
+                                     :system-total        sys-total
+                                     :system-total-new    new-sys-total
+                                     :system-total-unseen unseen-sys-total}))))
 
 (defn- get-messages*
   "Retrieves notification messages."
@@ -109,19 +113,18 @@
     (get-messages* user query)))
 
 (defn count-messages
-  "Provides a way to retrieve the number of messages that match a set of
-   criteria.  This endpoint takes several query-string parameters:
+  "Provides a way to retrieve the system message counts along with the number of user messages that 
+   match a set of criteria. This endpoint takes several query-string parameters:
 
-       user      - the name of the user to count notifications for
-       seen      - specify 'true' for only seen messages or 'false' for only
-                   unseen messages - optional (defaults to counting both seen
-                   and unseen messages)
-       filter    - filter by message type ('data', 'analysis', etc.)"
+       user   - the name of the user to count messages for
+       seen   - specify 'true' for only seen user messages or 'false' for only unseen user messages 
+                - optional (defaults to counting both seen and unseen user messages)
+       filter - filter user messages by message type ('data', 'analysis', etc.)"
   [query-params]
-  (let [user   (required-string :user query-params)
-        query {:seen   (optional-boolean :seen query-params)
-               :filter (mangle-filter (:filter query-params))}]
-    (count-messages* user query)))
+  (let [user       (required-string :user query-params)
+        user-query {:seen   (optional-boolean :seen query-params)
+                    :filter (mangle-filter (:filter query-params))}]
+    (count-messages* user user-query)))
 
 (defn last-ten-messages
   "Obtains the ten most recent notifications for the user in ascending order."
@@ -136,8 +139,8 @@
                      (map reformat)
                      (sort-by #(get-in % [:message :timestamp])))]
     (json-resp 200 (cheshire/encode {:total    (str total)
-                                     :messages results}))))
-
+                                     :messages results}))))  
+  
 (defn get-system-messages
   "Obtains the system messages that apply to a user."
   [query-params]
