@@ -1,4 +1,5 @@
 (ns notification-agent.seen
+  "This namespace provides the endpoint processing logic for marking messages as received or seen."
   (:use [notification-agent.common]
         [slingshot.slingshot :only [throw+]])
   (:require [clojure-commons.error-codes :as ce]
@@ -32,6 +33,23 @@
   (let [user (validate-user (:user (parse-body body)))]
     (db/mark-matching-notifications-seen user {:seen false})
     (successful-seen-response user)))
+
+(defn mark-system-messages-received
+  "Marks one or more system notifications as being received by a given user.
+
+   Parameters:
+     body   - The body of the HTTP post as formatted by ring
+     params - The query parameters as formatted by ring
+
+   Returns:
+     It returns the number of system notifications that have not be marked as received by the
+     given user.  The return is formatted as a map that ring can use to format an HTTP response."
+  [body {:keys [user]}]
+  (validate-user user)
+  (let [uuids (:uuids (parse-body body))]
+    (validate-uuids uuids body)
+    (db/mark-system-notifications-received user uuids)
+    (success-resp {:count (str (db/count-new-system-notifications user))})))
 
 (defn mark-system-messages-seen
   "Marks one or more system notifications as seen."

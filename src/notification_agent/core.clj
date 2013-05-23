@@ -98,12 +98,16 @@
 
 (defn- user-system-new-messages
   [query]
-  (trap :system-messages #(get-new-system-messages query)))
+  (trap :system-new-messages #(get-new-system-messages query)))
 
 (defn- user-system-unseen-messages
   [params]
   (trap :system-unseen-messages #(get-unseen-system-messages params)))
 
+(defn- user-system-messages-received
+  [body query]
+  (trap :system-messages-received #(mark-system-messages-received body query)))
+  
 (defn- user-system-messages-seen
   [body query]
   (trap :system-messages-seen #(mark-system-messages-seen body query)))
@@ -142,6 +146,9 @@
  
   (GET "/system/unseen-messages" [:as {params :params}]
        (user-system-unseen-messages params))
+  
+  (POST "/system/received" [:as {body :body params :params}] 
+        (user-system-messages-received body params))
   
   (POST  "/system/seen" [:as {body :body params :params}] 
          (user-system-messages-seen body params))

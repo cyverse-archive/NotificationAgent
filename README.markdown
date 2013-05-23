@@ -1220,6 +1220,53 @@ Sample curl:
 
     curl http://127.0.0.1:31320/system/unseen-messages?user=wregglej
 
+### Marking System Notifications As Received By A User
+
+* Endpoint: POST /system/received
+
+This endpoint allows a client to specify a list of system notifications that
+should be marked as received by the specified user.
+
+This endpoint accepts a `user` query parameter that tells the service which
+user's system notifications to return.
+
+The HTTP Method used for the request is a POST.
+
+The body of the request should be JSON that looks like the following:
+
+```json
+{
+  "uuids" : [
+    "23705cb9-2a46-4cc3-80de-989d86ecbd01",
+    "933ab627-5d1e-4cd9-b6e8-ff5462243637"
+  ]
+}
+```
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The response body for a successful marking will look like the following:
+
+```json
+{
+  "success" : true,
+  "count" : "1"
+}
+```
+
+The `count` field contains the number of system messages that are still 
+unreceived by the user. 
+
+Passing the same UUIDs in to the endpoint multiple times is simply a no-op and
+does not return any errors.
+
+Sample curl:
+
+```
+curl -d '{"uuids" : ["23705cb9-2a46-4cc3-80de-989d86ecbd01", "933ab627-5d1e-4cd9-b6e8-ff5462243637"]}' http://127.0.0.1:31320/system/seen?user=wregglej
+```
+
 ### Marking System Notifications As Seen By A User
 
 * Endpoint: POST /system/seen
@@ -1227,7 +1274,7 @@ Sample curl:
 This endpoint allows a client to specify a list of system notifications that
 should be marked as seen by the specified user.
 
-This endpoint accepts a "user" query parameter that tells the service which
+This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
 
 The HTTP Method used for the request is a POST.
@@ -1244,16 +1291,15 @@ The body of the request should be JSON that looks like the following:
 The service returns a 200 status code with a JSON response body. Otherwise, it
 returns either a 400 or 500 status code with a description of the error.
 
-The response body for a successful lookup with look like the following:
+The response body for a successful marking will look like the following:
 
     {
       "success" : true,
       "count" : "2"
     }
 
-The "count" field contains the number of system messages that are still unseen
-by the user. That value may never go down to 0 if there are system messages
-in the system that are not dismissible.
+The `count` field contains the number of system messages that are still unseen
+by the user. 
 
 Passing the same UUIDs in to the endpoint multiple times is simply a no-op and
 does not return any errors.
@@ -1289,9 +1335,8 @@ The response body for a successful lookup with look like the following:
       "count" : "2"
     }
 
-The "count" field contains the number of system messages that are still unseen
-by the user. That value may never go down to 0 if there are system messages
-in the system that are not dismissible.
+The `count` field contains the number of system messages that are still unseen
+by the user.
 
 Sample curl:
 
