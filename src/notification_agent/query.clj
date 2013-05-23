@@ -140,16 +140,29 @@
                      (sort-by #(get-in % [:message :timestamp])))]
     (json-resp 200 (cheshire/encode {:total    (str total)
                                      :messages results}))))  
+
+(defn- get-sys-msgs-with
+  [db-get query-params]
+  (let [user    (required-string :user query-params)
+        results (db-get user)]
+    (json-resp 200 (cheshire/encode {:system-messages results}))))
   
 (defn get-system-messages
   "Obtains the system messages that apply to a user."
   [query-params]
-  (let [user    (required-string :user query-params)
-        results (db/get-active-system-notifications user)]
-    (json-resp 200 (cheshire/encode {:system-messages results}))))
+  (get-sys-msgs-with db/get-active-system-notifications query-params))
+
+(defn get-new-system-messages
+  "Obtains the active system messages for a given user that have not been marked as retrieved.
+   
+   Parameters:
+     query-params - The query-params as provided by ring.
+   
+   Return:
+     It returns the list of new system messages in a map that ring can understand."
+  [query-params]
+  (get-sys-msgs-with db/get-new-system-notifications query-params))
 
 (defn get-unseen-system-messages
   [query-params]
-  (let [user (required-string :user query-params)
-        results (db/get-unseen-system-notifications user)]
-    (json-resp 200 (cheshire/encode {:system-messages results}))))
+  (get-sys-msgs-with db/get-unseen-system-notifications query-params))

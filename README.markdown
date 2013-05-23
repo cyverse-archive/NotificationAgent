@@ -1109,7 +1109,7 @@ are currently relevant for a user, regardless of whether they have been seen or
 not. This endpoint will not list system notifications that have been "soft"
 deleted by the user.
 
-This endpoint accepts a "user" query parameter that tells the service which
+This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
 
 The service returns a 200 status code with a JSON response body. Otherwise, it
@@ -1140,6 +1140,45 @@ The response body for a successful lookup with look like the following:
 Sample curl:
 
     curl http://127.0.0.1:31320/system/messages?user=wregglej
+    
+### Getting Only New System Notifications For A User
+
+* Endpoint: GET /system/new-messages
+
+This endpoint allows a client to request a list of only the new system 
+notifications that are currently relevant for a user. 
+
+This endpoint accepts a `user` query parameter that tells the service which
+user's system notifications to return.
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The HTTP method used for the request is a GET.
+
+The response body for a successful lookup with look like the following:
+
+```json
+{
+  "system-messages" : [
+    {
+      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "dismissible" : true,
+      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
+      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
+      "type" : "warning",
+      "message" : "I like cake",
+      "acknowledged" : false,
+      "logins_disabled" : false
+    }
+  ]
+}
+```
+
+Sample curl:
+
+    curl http://127.0.0.1:31320/system/new-messages?user=wregglej
 
 ### Getting All Unseen System Notifications For A User
 
@@ -1149,7 +1188,7 @@ This endpoint allows a client to request a list of all system notifications that
 are currently unseen for a user. This endpoint will not list system notifications
 that have been "soft" deleted by the user.
 
-This endpoint accepts a "user" query parameter that tells the service which
+This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
 
 The service returns a 200 status code with a JSON response body. Otherwise, it

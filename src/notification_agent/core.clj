@@ -96,6 +96,10 @@
   [query]
   (trap :system-messages #(get-system-messages query)))
 
+(defn- user-system-new-messages
+  [query]
+  (trap :system-messages #(get-new-system-messages query)))
+
 (defn- user-system-unseen-messages
   [params]
   (trap :system-unseen-messages #(get-unseen-system-messages params)))
@@ -133,6 +137,9 @@
   (GET   "/system/messages" [:as {params :params}] 
          (user-system-messages params))
   
+  (GET "/system/new-messages" [:as {params :params}]
+       (user-system-new-messages params))
+ 
   (GET "/system/unseen-messages" [:as {params :params}]
        (user-system-unseen-messages params))
   
