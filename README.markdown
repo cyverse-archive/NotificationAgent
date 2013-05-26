@@ -1264,7 +1264,45 @@ does not return any errors.
 Sample curl:
 
 ```
-curl -d '{"uuids" : ["23705cb9-2a46-4cc3-80de-989d86ecbd01", "933ab627-5d1e-4cd9-b6e8-ff5462243637"]}' http://127.0.0.1:31320/system/seen?user=wregglej
+curl -d '{"uuids" : ["23705cb9-2a46-4cc3-80de-989d86ecbd01", "933ab627-5d1e-4cd9-b6e8-ff5462243637"]}' http://127.0.0.1:31320/system/received?user=wregglej
+```
+
+### Marking All System Notifications As Received By A User
+
+* Endpoint: POST /system/mark-all-received
+
+This endpoint allows a client to mark all of the applicable system notifications
+as received by a user.
+
+The HTTP Method used for the request is a POST.
+
+This endpoint has no query parameters, but accepts a JSON-encoded request body
+that should look something like the following:
+
+```json
+{
+  "user" : "wregglej"
+}
+```
+
+The service returns a 200 status code with a JSON response body. Otherwise, it
+returns either a 400 or 500 status code with a description of the error.
+
+The response body for a successful lookup with look like the following:
+
+```json
+{
+  "success" : true,
+  "count" : "0"
+}
+
+The `count` field contains the number of system messages that are still 
+unreceived by the user.
+
+Sample curl:
+
+```
+curl -d '{"user" : "wregglej"}' http://127.0.0.1:31320/system/mark-all-received
 ```
 
 ### Marking System Notifications As Seen By A User
@@ -1313,8 +1351,7 @@ Sample curl:
 * Endpoint: POST /system/mark-all-seen
 
 This endpoint allows a client to mark all of the applicable system notifications
-as seen by a user. This does NOT apply to system notifications that have
-"dismissible" set to false, which is the default.
+as seen by a user.
 
 The HTTP Method used for the request is a POST.
 

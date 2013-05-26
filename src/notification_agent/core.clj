@@ -108,6 +108,10 @@
   [body query]
   (trap :system-messages-received #(mark-system-messages-received body query)))
   
+(defn- user-all-system-messages-received
+  [body]
+  (trap :all-system-messages-received #(mark-all-system-messages-received body)))
+  
 (defn- user-system-messages-seen
   [body query]
   (trap :system-messages-seen #(mark-system-messages-seen body query)))
@@ -149,6 +153,9 @@
   
   (POST "/system/received" [:as {body :body params :params}] 
         (user-system-messages-received body params))
+  
+  (POST "/system/mark-all-received" [:as {body :body}]
+        (user-all-system-messages-received body))
   
   (POST  "/system/seen" [:as {body :body params :params}] 
          (user-system-messages-seen body params))

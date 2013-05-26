@@ -699,9 +699,8 @@
   [uuid]
   (:dismissible (get-system-notification-by-uuid uuid)))
 
-;; TODO vectorize the exclude? and mark functions over uuid
 ;; NOT API
-(defn mark-system-notifications
+(defn mark-sys-notes
   "For a given user and a list of system notifications, this function uses the provided exclude?
    function to filter the notifications. The provided mark function is used to modify the system
    notification states in some way."
@@ -709,6 +708,14 @@
   (doseq [uuid (map str sys-note-uuids) :when (not (exclude? user uuid))]
     (mark user uuid)))
 
+;; NOT API
+(defn mark-selected-sys-notes
+  "For a given user, this function uses the provided select function choose the notifications. The 
+   provided mark function is used to modify the system notification states in some way."
+  [mark select user]
+  (doseq [uuid (map (comp str :uuid) (select user))]
+    (mark user uuid)))
+ 
 (defn mark-system-notifications-received
   "Mark the provided set of system notications as received by the given user.
 
@@ -716,25 +723,33 @@
      user - the name of the user of interest
      sys-note-uuids - the UUIDS of the system notifications to mark"
   [user sys-note-uuids]
-  (mark-system-notifications received received? user sys-note-uuids))
+  (mark-sys-notes received received? user sys-note-uuids))
+
+(defn mark-all-system-notifications-received
+  "Mark all of the system notification as received by the given user.
+   
+   Parameters:
+     user - the name of the user of interest"
+  [user]
+  (mark-selected-sys-notes received get-new-system-notifications user))
 
 (defn mark-system-notifications-seen 
   [user sys-note-uuids]
-  (mark-system-notifications seen seen? user sys-note-uuids))
+  (mark-sys-notes seen seen? user sys-note-uuids))
 
 (defn mark-all-system-notifications-seen
   [user]
-  (let [uuids (map :uuid (get-unseen-system-notifications user))]
-    (mark-system-notifications-seen user uuids)))
+  (mark-selected-sys-notes seen get-unseen-system-notifications user))
 
 (defn soft-delete-system-notifications
   [user sys-note-uuids]
-  (mark-system-notifications delete-msg 
-                             #(or (not (dismissible? %2)) (deleted? %1 %2)) 
-                             user
-                             sys-note-uuids))
+  (mark-sys-notes delete-msg 
+                  #(or (not (dismissible? %2)) (deleted? %1 %2)) 
+                  user
+                  sys-note-uuids))
 
 (defn soft-delete-all-system-notifications
   [user]
-  (let [uuids (map :uuid (get-active-system-notifications user))]
-    (soft-delete-system-notifications user uuids)))
+  (mark-selected-sys-notes delete-msg 
+                           #(filter :dismissible (get-active-system-notifications %)) 
+                           user))

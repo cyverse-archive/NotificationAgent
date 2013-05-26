@@ -51,6 +51,20 @@
     (db/mark-system-notifications-received user uuids)
     (success-resp {:count (str (db/count-new-system-notifications user))})))
 
+(defn mark-all-system-messages-received
+  "Marks all system messages as being received by a given user.
+
+   Parameters:
+     body   - The body of the HTTP post as formatted by ring
+
+   Returns:
+     It returns the number of system notifications that have not be marked as received by the
+     given user.  The return is formatted as a map that ring can use to format an HTTP response."
+  [body]
+  (let [user (validate-user (:user (parse-body body)))]
+    (db/mark-all-system-notifications-received user)
+    (success-resp {:count (str (db/count-new-system-notifications user))})))
+
 (defn mark-system-messages-seen
   "Marks one or more system notifications as seen."
   [body {:keys [user]}]
