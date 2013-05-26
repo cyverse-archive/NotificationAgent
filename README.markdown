@@ -1295,6 +1295,7 @@ The response body for a successful lookup with look like the following:
   "success" : true,
   "count" : "0"
 }
+```
 
 The `count` field contains the number of system messages that are still 
 unreceived by the user.
