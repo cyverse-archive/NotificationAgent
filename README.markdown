@@ -1162,10 +1162,10 @@ The response body for a successful lookup with look like the following:
 {
   "system-messages" : [
     {
-      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "deactivation_date" : "1227582343552",
       "dismissible" : true,
-      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
-      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "activation_date" : "1227582343552",
+      "date_created" : "1227582343552",
       "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
       "type" : "warning",
       "message" : "I like cake",
@@ -1175,6 +1175,8 @@ The response body for a successful lookup with look like the following:
   ]
 }
 ```
+
+The date fields are all represented as milliseconds since the epoch.
 
 Sample curl:
 
