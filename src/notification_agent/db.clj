@@ -463,10 +463,11 @@
   (comp pos? count-results))
 
 ;; NOT API
-(def count-sys-note-ack-state-below
+(defn count-sys-note-ack-state-below
+  [ack-state user]
   "Given a user and an acknowledgment state, this function determines how many active system 
    messages having a user acknowledgment state below the given acknowledgment state."
-  (comp count-results (partial active-sys-note-ack-below-query (millis-since-epoch))))
+  (count-results (active-sys-note-ack-below-query (millis-since-epoch) ack-state user)))
 
 ;; NOT API
 (defn get-sys-note-ack-state-below
