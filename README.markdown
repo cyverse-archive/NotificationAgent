@@ -777,8 +777,9 @@ In this example, only unseen data messages for the uer, `ipctest`, are counted.
 
 Marking a notification as seen prevents it from being returned by the
 `/unseen-messages` endpoint. The intent is for this endpoint to be called when
-the user has seen a notification for the first time. This service accepts a
-request body in the following format:
+the user has seen a notification for the first time. This services requires a `user` 
+query parameter that provides the name of the user who is marking these messages as
+seen. This service accepts a request body in the following format:
 
 ```json
 {
