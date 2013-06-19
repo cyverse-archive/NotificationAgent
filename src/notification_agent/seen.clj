@@ -8,7 +8,8 @@
 (defn- validate-uuids
   "Validates the list of UUIDs that was passed in."
   [uuids body]
-  (when (empty? uuids)
+  (when (or (nil? uuids) 
+            (not (coll? uuids)))
     (throw+ {:error_code ce/ERR_BAD_OR_MISSING_FIELD
              :field_name :uuids
              :body       body})))
