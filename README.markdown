@@ -671,10 +671,10 @@ that of the /messages and /unseen-messages endpoints.
 
 * Endpoint: GET /count-messages
 
-This end-point returns count statistics for the messages that are currently 
-active. It counts for both system message counts and a user message count. For 
-the system messages, it returns the total number of messages, the total number 
-of unseen messages and the total number of new messages. The user messages may 
+This end-point returns count statistics for the messages that are currently
+active. It counts for both system message counts and a user message count. For
+the system messages, it returns the total number of messages, the total number
+of unseen messages and the total number of new messages. The user messages may
 be filtered by a set of criteria. Optional parameters provide this filtering.
 
 This endpoint takes three query-string parameters:
@@ -724,12 +724,12 @@ The response body consists of a JSON object with a four fields:
     "user-total":          count,
     "system-total":        count,
     "system-total-new":    count,
-    "system-total-unseen": count 
+    "system-total-unseen": count
 }
 ```
 
-* `user-total` contains the number of user messages that match the criteria specified in the query string. 
-* `system-total` contains the number of system messages that are active and have not been dismissed by the user. 
+* `user-total` contains the number of user messages that match the criteria specified in the query string.
+* `system-total` contains the number of system messages that are active and have not been dismissed by the user.
 * `system-total-new` contains the number of system messages that have not been marked as received by the user.
 * `system-total-unseen` contains the number of system message that have not been marked as seen by the user.
 
@@ -777,7 +777,7 @@ In this example, only unseen data messages for the uer, `ipctest`, are counted.
 
 Marking a notification as seen prevents it from being returned by the
 `/unseen-messages` endpoint. The intent is for this endpoint to be called when
-the user has seen a notification for the first time. This services requires a `user` 
+the user has seen a notification for the first time. This services requires a `user`
 query parameter that provides the name of the user who is marking these messages as
 seen. This service accepts a request body in the following format:
 
@@ -1108,7 +1108,7 @@ Sample curl:
 This endpoint allows a client to request a list of all system notifications that
 are currently relevant for a user, regardless of whether they have been seen or
 not. This endpoint will not list system notifications that have been "soft"
-deleted by the user.
+deleted (also known as "dismissed") by the user.
 
 This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
@@ -1118,7 +1118,7 @@ returns either a 400 or 500 status code with a description of the error.
 
 The HTTP method used for the request is a GET.
 
-The response body for a successful lookup with look like the following:
+The response body for a successful lookup will look like the following:
 
 ```json
 {
@@ -1141,13 +1141,13 @@ The response body for a successful lookup with look like the following:
 Sample curl:
 
     curl http://127.0.0.1:31320/system/messages?user=wregglej
-    
+
 ### Getting Only New System Notifications For A User
 
 * Endpoint: GET /system/new-messages
 
-This endpoint allows a client to request a list of only the new system 
-notifications that are currently relevant for a user. 
+This endpoint allows a client to request a list of only the new system
+notifications that are currently relevant for a user.
 
 This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
@@ -1189,7 +1189,9 @@ Sample curl:
 
 This endpoint allows a client to request a list of all system notifications that
 are currently unseen for a user. This endpoint will not list system notifications
-that have been "soft" deleted by the user.
+that have been "soft" deleted (also known as "dismissed") by the user. Nor will
+it list system notifications that have already been seen by the user, regardless
+of whether or not the message has been dismissed or is marked as dismissible.
 
 This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
@@ -1258,8 +1260,8 @@ The response body for a successful marking will look like the following:
 }
 ```
 
-The `count` field contains the number of system messages that are still 
-unreceived by the user. 
+The `count` field contains the number of system messages that are still
+unreceived by the user.
 
 Passing the same UUIDs in to the endpoint multiple times is simply a no-op and
 does not return any errors.
@@ -1300,7 +1302,7 @@ The response body for a successful lookup with look like the following:
 }
 ```
 
-The `count` field contains the number of system messages that are still 
+The `count` field contains the number of system messages that are still
 unreceived by the user.
 
 Sample curl:
@@ -1314,7 +1316,9 @@ curl -d '{"user" : "wregglej"}' http://127.0.0.1:31320/system/mark-all-received
 * Endpoint: POST /system/seen
 
 This endpoint allows a client to specify a list of system notifications that
-should be marked as seen by the specified user.
+should be marked as seen by the specified user. Any system notification may be
+marked as seen by a user, even system notifications that cannot be completely
+dismissed by the user.
 
 This endpoint accepts a `user` query parameter that tells the service which
 user's system notifications to return.
@@ -1341,7 +1345,7 @@ The response body for a successful marking will look like the following:
     }
 
 The `count` field contains the number of system messages that are still unseen
-by the user. 
+by the user.
 
 Passing the same UUIDs in to the endpoint multiple times is simply a no-op and
 does not return any errors.
@@ -1355,7 +1359,8 @@ Sample curl:
 * Endpoint: POST /system/mark-all-seen
 
 This endpoint allows a client to mark all of the applicable system notifications
-as seen by a user.
+as seen by a user. Any system notification can be marked as seen by the user,
+even those that are marked as not dismissible.
 
 The HTTP Method used for the request is a POST.
 
