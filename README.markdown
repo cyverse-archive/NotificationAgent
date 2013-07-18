@@ -578,10 +578,12 @@ list of query string parameters for this endpoint is:
             <td>filter</td>
             <td>
                 Specifies the type of notification messages to return, which
-                can be `data`, `analysis` or `tool`. Other types of
+                can be `data`, `analysis`, `tool` or `new`. Other types of
                 notifications may be added in the future. If this parameter
                 it not specified then all types of notifications will be
-                returned.
+                returned. The special filter type, `new`, is provided as a
+                convenience for the UI. If this filter is specified then
+                unseen notifications of any type will be returned.
             </td>
             <td>Optional</td>
         </tr>

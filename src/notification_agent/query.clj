@@ -76,6 +76,20 @@
   (when-not (nil? filt)
     (string/lower-case (string/replace filt #" " "_"))))
 
+(defn- get-seen-flag
+  "Gets the seen flag from the query parameters."
+  [query-params]
+  (let [seen (optional-boolean :seen query-params)
+        filt (mangle-filter (:filter query-params))]
+    (if (= filt "new") false seen)))
+
+(defn- get-filter
+  "Gets the filter from the query parameters."
+  [query-params]
+  (let [filt (mangle-filter (:filter query-params))]
+    (when-not (or (nil? filt) (= filt "new"))
+      filt)))
+
 (defn get-unseen-messages
   "Looks up all messages in the that have not been seen yet for a specified user."
   [query-params]
@@ -106,18 +120,18 @@
   (let [user  (required-string :user query-params)
         query {:limit      (optional-long :limit query-params 0)
                :offset     (optional-long :offset query-params 0)
-               :seen       (optional-boolean :seen query-params)
+               :seen       (get-seen-flag query-params)
                :sort-field (as-keyword (:sortfield query-params "timestamp"))
                :sort-dir   (as-keyword (:sortdir query-params "desc"))
-               :filter     (mangle-filter (:filter query-params))}]
+               :filter     (get-filter (:filter query-params))}]
     (get-messages* user query)))
 
 (defn count-messages
-  "Provides a way to retrieve the system message counts along with the number of user messages that 
+  "Provides a way to retrieve the system message counts along with the number of user messages that
    match a set of criteria. This endpoint takes several query-string parameters:
 
        user   - the name of the user to count messages for
-       seen   - specify 'true' for only seen user messages or 'false' for only unseen user messages 
+       seen   - specify 'true' for only seen user messages or 'false' for only unseen user messages
                 - optional (defaults to counting both seen and unseen user messages)
        filter - filter user messages by message type ('data', 'analysis', etc.)"
   [query-params]
@@ -139,14 +153,14 @@
                      (map reformat)
                      (sort-by #(get-in % [:message :timestamp])))]
     (json-resp 200 (cheshire/encode {:total    (str total)
-                                     :messages results}))))  
+                                     :messages results}))))
 
 (defn- get-sys-msgs-with
   [db-get query-params]
   (let [user    (required-string :user query-params)
         results (db-get user)]
     (json-resp 200 (cheshire/encode {:system-messages results}))))
-  
+
 (defn get-system-messages
   "Obtains the system messages that apply to a user."
   [query-params]
@@ -154,10 +168,10 @@
 
 (defn get-new-system-messages
   "Obtains the active system messages for a given user that have not been marked as retrieved.
-   
+
    Parameters:
      query-params - The query-params as provided by ring.
-   
+
    Return:
      It returns the list of new system messages in a map that ring can understand."
   [query-params]
