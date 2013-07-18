@@ -5,7 +5,7 @@
                  [cheshire "5.0.1"]
                  [compojure "1.0.2"]
                  [org.iplantc/clojure-commons "1.4.1-SNAPSHOT"]
-                 [org.iplantc/kameleon "0.1.2-SNAPSHOT"]
+                 [org.iplantc/kameleon "0.1.3-SNAPSHOT"]
                  [clj-http "0.5.5"]
                  [clj-time "0.5.0"]
                  [ring/ring-jetty-adapter "1.1.0"]
