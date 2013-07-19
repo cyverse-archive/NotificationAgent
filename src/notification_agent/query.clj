@@ -123,7 +123,7 @@
                :seen       (get-seen-flag query-params)
                :sort-field (as-keyword (:sortfield query-params "timestamp"))
                :sort-dir   (as-keyword (:sortdir query-params "desc"))
-               :filter     (get-filter (:filter query-params))}]
+               :filter     (get-filter query-params)}]
     (get-messages* user query)))
 
 (defn count-messages
