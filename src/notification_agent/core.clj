@@ -72,6 +72,11 @@
   [body]
   (trap :admin-add-system-notification #(handle-add-system-notif body)))
 
+(defn- admin-list-system-notifications
+  "Handles a request to list active system notifications."
+  [params]
+  (trap :admin-list-system-notifications #(handle-system-notification-listing params)))
+
 (defn- admin-get-system-notification
   "Handles retrieving a system notification by uuid."
   [uuid]
@@ -107,11 +112,11 @@
 (defn- user-system-messages-received
   [body query]
   (trap :system-messages-received #(mark-system-messages-received body query)))
-  
+
 (defn- user-all-system-messages-received
   [body]
   (trap :all-system-messages-received #(mark-all-system-messages-received body)))
-  
+
 (defn- user-system-messages-seen
   [body query]
   (trap :system-messages-seen #(mark-system-messages-seen body query)))
@@ -140,51 +145,54 @@
   (GET  "/messages" [:as {params :params}] (messages params))
   (GET  "/count-messages" [:as {params :params}] (count-msgs params))
   (GET  "/last-ten-messages" [:as {params :params}] (last-ten params))
-  
+
   ;;;DE UI facing APIs for system notifications
-  (GET   "/system/messages" [:as {params :params}] 
+  (GET   "/system/messages" [:as {params :params}]
          (user-system-messages params))
-  
+
   (GET "/system/new-messages" [:as {params :params}]
        (user-system-new-messages params))
- 
+
   (GET "/system/unseen-messages" [:as {params :params}]
        (user-system-unseen-messages params))
-  
-  (POST "/system/received" [:as {body :body params :params}] 
+
+  (POST "/system/received" [:as {body :body params :params}]
         (user-system-messages-received body params))
-  
+
   (POST "/system/mark-all-received" [:as {body :body}]
         (user-all-system-messages-received body))
-  
-  (POST  "/system/seen" [:as {body :body params :params}] 
+
+  (POST  "/system/seen" [:as {body :body params :params}]
          (user-system-messages-seen body params))
-  
+
   (POST "/system/mark-all-seen" [:as {body :body}]
         (user-all-system-messages-seen body))
-  
-  (POST "/system/delete" [:as {:keys [params body]}] 
+
+  (POST "/system/delete" [:as {:keys [params body]}]
         (user-delete-system-messages params body))
-  
+
   (DELETE "/system/delete-all" [:as {params :params}]
           (user-delete-all-system-messages params))
-  
+
   ;;;Admin-only facing APIs
-  (PUT "/admin/system" [:as {body :body}] 
+  (PUT "/admin/system" [:as {body :body}]
        (admin-add-system-notification body))
-  
-  (GET "/admin/system/:uuid" [uuid :as {body :body}] 
+
+  (GET "/admin/system" [:as {params :params}]
+       (admin-list-system-notifications params))
+
+  (GET "/admin/system/:uuid" [uuid :as {body :body}]
        (admin-get-system-notification uuid))
-  
-  (POST "/admin/system/:uuid" [uuid :as {body :body}] 
+
+  (POST "/admin/system/:uuid" [uuid :as {body :body}]
         (admin-update-system-notification uuid body))
-  
-  (DELETE "/admin/system/:uuid" [uuid] 
+
+  (DELETE "/admin/system/:uuid" [uuid]
           (admin-delete-system-notification uuid))
-  
-  (GET "/admin/system-types" [] 
+
+  (GET "/admin/system-types" []
        (admin-get-system-notification-types))
-  
+
   (route/not-found "Unrecognized service path.\n"))
 
 (defn site-handler [routes]

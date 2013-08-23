@@ -335,11 +335,11 @@
     (dissoc :id :system_notification_type_id)))
 
 (defn- ack-aware-system-map
-  "This function converts a system notification record received from the database into the expected 
+  "This function converts a system notification record received from the database into the expected
    form for transmission.
 
    Unlike system-map, this version assumes that the :type of the notification is already in the db
-   record. It also assumes that the ;date_acknowledged field is in the record and computes the 
+   record. It also assumes that the ;date_acknowledged field is in the record and computes the
    :acknowledged flag from that field.
 
    Parameters:
@@ -355,6 +355,15 @@
            :acknowledged      (not= nil (:date_acknowledged db-sys-note)))
     (dissoc :date_acknowledged)))
 
+(defn- system-listing-map
+  "Cleans up a map representing a system notification. In this case, the system notification type
+   name is already in the map and we don't have any acknowledgment information."
+  [db-map]
+  (assoc db-map
+    :activation_date   (xform-timestamp (:activation_date db-map))
+    :deactivation_date (xform-timestamp (:deactivation_date db-map))
+    :date_created      (xform-timestamp (:date_created db-map))))
+
 (defn insert-system-notification-type
   "Adds a new system notification type."
   [sys-notif-type]
@@ -365,7 +374,7 @@
 
    Required Paramters
       type - The system notification type.
-      deactivation-date - The date that the system notification is no longer valid. 
+      deactivation-date - The date that the system notification is no longer valid.
           String containing the milliseconds since the epoch.
       message - The message that's displayed in the notification.
 
@@ -374,14 +383,14 @@
           String containing the milliseconds since the epoch.
       :dismissible? - Boolean that tells whether a user can deactivate the notification.
       :logins-disabled? - Boolean"
-  [type deactivation-date message 
+  [type deactivation-date message
    & {:keys [activation-date
-             dismissible 
+             dismissible
              logins-disabled]
       :or   {activation-date  (millis-since-epoch)
              dismissible     false
              logins-disabled false}}]
-  (system-map 
+  (system-map
     (insert system_notifications
             (values {:uuid                         (UUID/randomUUID)
                      :system_notification_type_id  (get-system-notification-type-id type)
@@ -398,19 +407,19 @@
 
 (defn- for-ack-state-above
   [query inf-state]
-  (-> query 
+  (-> query
     (where (raw (str "(system_notification_acknowledgments.state IS NOT NULL
                        AND system_notification_acknowledgments.state > '" inf-state "')")))))
 
 (defn- for-ack-state-below
   [query sup-state]
-  (-> query 
+  (-> query
     (where (raw (str "(system_notification_acknowledgments.state IS NULL
                        OR system_notification_acknowledgments.state < '" sup-state "')")))))
 
 (defn- for-sys-note
   [query sys-note-uuid]
-  (-> query 
+  (-> query
     (where {:system_notifications.uuid (parse-uuid sys-note-uuid)})))
 
 (defn- for-user
@@ -420,19 +429,31 @@
 (defn- aggregate-count
   [query & {:keys [count-key] :or {count-key :count}}]
   (-> query (aggregate (count :*) count-key)))
-  
+
 (defn- sys-note-fields
   [query]
-  (fields query 
-    [:system_notifications.uuid                             :uuid] 
+  (fields query
+    [:system_notifications.uuid                             :uuid]
     [:system_notifications.date_created                     :date_created]
-    [:system_notifications.activation_date                  :activation_date] 
-    [:system_notifications.deactivation_date                :deactivation_date] 
+    [:system_notifications.activation_date                  :activation_date]
+    [:system_notifications.deactivation_date                :deactivation_date]
     [:system_notifications.message                          :message]
-    [:system_notifications.dismissible                      :dismissible] 
+    [:system_notifications.dismissible                      :dismissible]
     [:system_notifications.logins_disabled                  :logins_disabled]
-    [:system_notification_types.name                        :type]    
+    [:system_notification_types.name                        :type]
     [:system_notification_acknowledgments.date_acknowledged :date_acknowledged]))
+
+(defn- sys-listing-fields
+  [query]
+  (fields query
+    [:system_notifications.uuid              :uuid]
+    [:system_notifications.date_created      :date_created]
+    [:system_notifications.activation_date   :activation_date]
+    [:system_notifications.deactivation_date :deactivation_date]
+    [:system_notifications.message           :message]
+    [:system_notifications.dismissible       :dismissible]
+    [:system_notifications.logins_disabled   :logins_disabled]
+    [:system_notification_types.name         :type]))
 
 (defn- active-sys-note-ack-below-query
   [epoch sup-state user]
@@ -443,13 +464,37 @@
              :system_notification_acknowledgments]
         (= :id :system_notification_acknowledgments.system_notification_id))
 	    (where {:activation_date [<= epoch-str] :deactivation_date [> epoch-str]})
-      (for-ack-state-below sup-state))))    
+      (for-ack-state-below sup-state))))
 
 (defn- sys-note-acks-query
   []
   (-> (select* system_notification_acknowledgments)
     (with users)
     (with system_notifications)))
+
+(defn- add-active-condition
+  "Adds a condition to a system notification query limiting the results to notifications that are
+   currently active."
+  [query]
+  (let [epoch-str (parse-date (millis-since-epoch))]
+    (where query {:activation_date   [<= epoch-str]
+                  :deactivation_date [> epoch-str]})))
+
+(defn- add-type-condition
+  "Adds a condition to a system notification query limiting the results to notifications of a
+   specific type."
+  [query type]
+  (where query {:system_notification_types.name type}))
+
+(defn- system-notification-listing-query
+  "Generates a query that can be used to list system notifications. The listing can be filtered
+   based on the active state or system notification type."
+  [active-only type]
+  (-> (select* system_notifications)
+      (with system_notification_types)
+      (sys-listing-fields)
+      (#(if active-only (add-active-condition %) %))
+      (#(if-not (nil? type) (add-type-condition % type) %))))
 
 ;; NOT API
 (defn count-results
@@ -465,7 +510,7 @@
 ;; NOT API
 (defn count-sys-note-ack-state-below
   [ack-state user]
-  "Given a user and an acknowledgment state, this function determines how many active system 
+  "Given a user and an acknowledgment state, this function determines how many active system
    messages having a user acknowledgment state below the given acknowledgment state."
   (count-results (active-sys-note-ack-below-query (millis-since-epoch) ack-state user)))
 
@@ -475,9 +520,14 @@
    some provided state."
   [sup-state user]
   (let [now (millis-since-epoch)]
-    (mapv ack-aware-system-map 
+    (mapv ack-aware-system-map
           (select (-> (active-sys-note-ack-below-query now sup-state user) sys-note-fields)))))
- 
+
+(defn list-system-notifications
+  "Lists all currently active system notifications."
+  [active-only type]
+  (mapv system-listing-map (select (system-notification-listing-query active-only type))))
+
 (defn get-active-system-notifications
   "This function retrieves the set of active system notifications for a given user that have not
    been dismissed. It returns the transmission form of the system notification records.
@@ -491,7 +541,7 @@
   (get-sys-note-ack-state-below "dismissed" user))
 
 (defn get-new-system-notifications
-  "Returns the active system notifications for a particular user that the user has not received 
+  "Returns the active system notifications for a particular user that the user has not received
    yet.
 
    Parameters:
@@ -523,7 +573,7 @@
      The number of system notifications that are active by have not been received by a given user."
   [user]
   (count-sys-note-ack-state-below "received" user))
-  
+
 (defn count-unseen-system-notifications
   "Returns the count of the unseen system notifications for a user."
   [user]
@@ -539,7 +589,7 @@
 (defn- system-notification-update-map
   [{:keys [type deactivation-date activation-date dismissible logins-disabled message]}]
   (let [update-map   (atom {})
-        assoc-update #(reset! update-map (assoc @update-map %1 %2))] 
+        assoc-update #(reset! update-map (assoc @update-map %1 %2))]
     (when-not (nil? type)
       (assoc-update :system_notification_type_id (get-system-notification-type-id type)))
     (when-not (nil? deactivation-date)
@@ -562,17 +612,17 @@
 
    Optional Parameters:
       :type - The system notification type.
-      :deactivation-date - The date that the system notification is no longer valid. 
+      :deactivation-date - The date that the system notification is no longer valid.
           String containing the milliseconds since the epoch.
       :activation-date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
       :dismissible - Boolean that tells whether a user can deactivate the notification.
       :logins-disabled - Boolean
-      :message - The message that's displayed in the notification." 
+      :message - The message that's displayed in the notification."
   [uuid update-values]
   (system-map
-    (update system_notifications 
-            (set-fields (system-notification-update-map update-values)) 
+    (update system_notifications
+            (set-fields (system-notification-update-map update-values))
             (where {:uuid (parse-uuid uuid)}))))
 
 (defn- system-notif-id
@@ -585,17 +635,17 @@
    Required Parameters:
      uuid - The system notification uuid."
   [uuid]
-  (delete system_notification_acknowledgments 
+  (delete system_notification_acknowledgments
           (where {:system_notification_id (system-notif-id uuid)}))
   (system-map
     (delete system_notifications (where {:uuid (parse-uuid uuid)}))))
 
 ;; NOT API
 (defn ack-exists?
-  "Indicates whether or not an acknowledgment record exists for a given user and system 
+  "Indicates whether or not an acknowledgment record exists for a given user and system
    notification."
   [user sys-note-uuid]
-  (has-result? (-> (sys-note-acks-query) 
+  (has-result? (-> (sys-note-acks-query)
                  (for-user user)
                  (for-sys-note sys-note-uuid))))
 
@@ -619,7 +669,7 @@
   "Inserts a new system notification acknowledgment record for a given user and system notification
    and for a given acknowledgement state. For an 'acknowledged' state, use insert-seen-ack instead."
   [ack-state user sys-note-uuid]
-  (exec-raw [(str "INSERT INTO system_notification_acknowledgments 
+  (exec-raw [(str "INSERT INTO system_notification_acknowledgments
                        (user_id, system_notification_id, state)
                      VALUES (?, ?, '" ack-state "')")
              [(get-user-id user) (system-notif-id sys-note-uuid)]]))
@@ -630,32 +680,32 @@
    The state is set to acknowledged, and the given time used for the date acknowledged."
   [seen-date user sys-note-uuid]
   (exec-raw ["INSERT INTO system_notification_acknowledgments VALUES (?, ?, 'acknowledged', ?)"
-             [(get-user-id user) 
-              (system-notif-id sys-note-uuid) 
+             [(get-user-id user)
+              (system-notif-id sys-note-uuid)
               (parse-date seen-date)]]))
 
 ;; NOT API
 (defn update-ack
-  "Updates an existing system notification acknowledgment record for a given user and system 
-   notification, setting the acknowledgement state to the given state. For an 'acknowledged' state, 
+  "Updates an existing system notification acknowledgment record for a given user and system
+   notification, setting the acknowledgement state to the given state. For an 'acknowledged' state,
    use update-seen-ack instead."
   [ack-state user sys-note-uuid]
-  (exec-raw [(str "UPDATE system_notification_acknowledgments 
-                     SET state = '" ack-state "' 
+  (exec-raw [(str "UPDATE system_notification_acknowledgments
+                     SET state = '" ack-state "'
                      WHERE user_id = ? AND system_notification_id = ?")
              [(get-user-id user) (system-notif-id sys-note-uuid)]]))
 
 ;; NOT API
 (defn update-ack-to-seen
-  "Updates an existing system notification acknowledgment record for a given user and system 
-   notification, setting the acknowledgment state to 'acknowledged'. The given time used for the 
+  "Updates an existing system notification acknowledgment record for a given user and system
+   notification, setting the acknowledgment state to 'acknowledged'. The given time used for the
    date acknowledged."
   [seen-date user sys-note-uuid]
-  (exec-raw ["UPDATE system_notification_acknowledgments 
-               SET state = 'acknowledged', date_acknowledged = ? 
+  (exec-raw ["UPDATE system_notification_acknowledgments
+               SET state = 'acknowledged', date_acknowledged = ?
                WHERE user_id = ? AND system_notification_id = ?"
-             [(parse-date seen-date) 
-              (get-user-id user) 
+             [(parse-date seen-date)
+              (get-user-id user)
               (system-notif-id sys-note-uuid)]]))
 
 ;; NOT API
@@ -664,10 +714,10 @@
    if an acknowledgment record exists. If the record already exists, it uses the provided update
    function, otherwise it uses the provided insert function."
   [insert update user sys-note-uuid]
-  (if (ack-exists? user sys-note-uuid) 
+  (if (ack-exists? user sys-note-uuid)
     (update user sys-note-uuid)
-    (insert user sys-note-uuid))) 
-      
+    (insert user sys-note-uuid)))
+
 ;; NOT API
 (defn received
   "Sets the acknowledgement record state to 'received' for a given user and system notification."
@@ -678,14 +728,14 @@
               sys-note-uuid))
 ;; NOT API
 (defn seen
-  "Sets the acknowledgement record state to 'acknowledged' for a given user and system 
+  "Sets the acknowledgement record state to 'acknowledged' for a given user and system
    notification. It also sets the acknowledgment time to the current time."
   [user sys-note-uuid]
   (let [now (millis-since-epoch)]
-    (upsert-ack (partial insert-seen-ack now) 
-                (partial update-ack-to-seen now) 
-                user 
-                sys-note-uuid))) 
+    (upsert-ack (partial insert-seen-ack now)
+                (partial update-ack-to-seen now)
+                user
+                sys-note-uuid)))
 
 ;; NOT API
 (defn delete-msg
@@ -711,12 +761,12 @@
 
 ;; NOT API
 (defn mark-selected-sys-notes
-  "For a given user, this function uses the provided select function choose the notifications. The 
+  "For a given user, this function uses the provided select function choose the notifications. The
    provided mark function is used to modify the system notification states in some way."
   [mark select user]
   (doseq [uuid (map (comp str :uuid) (select user))]
     (mark user uuid)))
- 
+
 (defn mark-system-notifications-received
   "Mark the provided set of system notications as received by the given user.
 
@@ -728,13 +778,13 @@
 
 (defn mark-all-system-notifications-received
   "Mark all of the system notification as received by the given user.
-   
+
    Parameters:
      user - the name of the user of interest"
   [user]
   (mark-selected-sys-notes received get-new-system-notifications user))
 
-(defn mark-system-notifications-seen 
+(defn mark-system-notifications-seen
   [user sys-note-uuids]
   (mark-sys-notes seen seen? user sys-note-uuids))
 
@@ -744,13 +794,13 @@
 
 (defn soft-delete-system-notifications
   [user sys-note-uuids]
-  (mark-sys-notes delete-msg 
-                  #(or (not (dismissible? %2)) (deleted? %1 %2)) 
+  (mark-sys-notes delete-msg
+                  #(or (not (dismissible? %2)) (deleted? %1 %2))
                   user
                   sys-note-uuids))
 
 (defn soft-delete-all-system-notifications
   [user]
-  (mark-selected-sys-notes delete-msg 
-                           #(filter :dismissible (get-active-system-notifications %)) 
+  (mark-selected-sys-notes delete-msg
+                           #(filter :dismissible (get-active-system-notifications %))
                            user))

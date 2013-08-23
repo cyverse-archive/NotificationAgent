@@ -16,7 +16,7 @@
         (IllegalArgumentException. (str "missing required field " desc))))))
 
 (defn- validate-time
-  "Verifies that time when a system message is active has a positive duration and is not entirely in 
+  "Verifies that time when a system message is active has a positive duration and is not entirely in
    the past."
   [req]
   (let [end-time (timestamp->millis (:deactivation-date req))]
@@ -24,9 +24,9 @@
     (throw (IllegalArgumentException. "The provided deactivation date is in the past.")))
   (when-let [beg-time (:activation-date req)]
     (when (<= end-time (timestamp->millis beg-time))
-      (throw (IllegalArgumentException. 
+      (throw (IllegalArgumentException.
                "The activation date needs to be prior to the deactivation date."))))))
-                                        
+
 (def
   ^{:private true
     :doc "The fields that have to be present in the request body."}
@@ -93,6 +93,11 @@
     (validate-request request :req-fields required-system-fields)
     (validate-time request)
     (persist-system-msg request)))
+
+(defn handle-system-notification-listing
+  "Handles a system notification listing request."
+  [{:keys [active-only type]}]
+  (list-system-msgs (Boolean/parseBoolean active-only) type))
 
 (defn handle-get-system-notif
   "Handles getting a system notification."

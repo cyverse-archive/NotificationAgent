@@ -108,6 +108,10 @@
        (apply insert-system-notif sys-args)
        (insert-system-notif))}))
 
+(defn list-system-msgs
+  [active-only type]
+  {:system-messages (db/list-system-notifications active-only type)})
+
 (defn get-system-msg
   [uuid]
   {:system-notification (db/get-system-notification-by-uuid uuid)})
