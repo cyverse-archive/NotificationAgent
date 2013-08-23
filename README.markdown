@@ -1019,7 +1019,7 @@ All query string arguments are optional.
 Here's an example of a successful listing:
 
 ```
-$ curl -s "http://localhost:31320/admin/system?active-only=true&type=announcement&limit=1" | python -mjson.tool
+$ curl -s "http://by-tor:65533/admin/system?active-only=true&type=announcement&limit=1" | python -mjson.tool
 {
     "action": "admin-list-system-notifications",
     "status": "success",
