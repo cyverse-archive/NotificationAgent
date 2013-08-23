@@ -96,8 +96,8 @@
 
 (defn handle-system-notification-listing
   "Handles a system notification listing request."
-  [{:keys [active-only type]}]
-  (list-system-msgs (Boolean/parseBoolean active-only) type))
+  [{:keys [active-only type limit offset]}]
+  (list-system-msgs (Boolean/parseBoolean active-only) type limit offset))
 
 (defn handle-get-system-notif
   "Handles getting a system notification."

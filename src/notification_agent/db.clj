@@ -489,12 +489,15 @@
 (defn- system-notification-listing-query
   "Generates a query that can be used to list system notifications. The listing can be filtered
    based on the active state or system notification type."
-  [active-only type]
-  (-> (select* system_notifications)
-      (with system_notification_types)
-      (sys-listing-fields)
-      (#(if active-only (add-active-condition %) %))
-      (#(if-not (nil? type) (add-type-condition % type) %))))
+  ([active-only type]
+     (system-notification-listing-query active-only type nil nil))
+  ([active-only type res-limit res-offset]
+     (-> (select* system_notifications)
+         (with system_notification_types)
+         (#(if active-only (add-active-condition %) %))
+         (#(if-not (nil? type) (add-type-condition % type) %))
+         (#(if res-limit (limit % res-limit) %))
+         (#(if res-offset (offset % res-offset) %)))))
 
 ;; NOT API
 (defn count-results
@@ -524,9 +527,19 @@
           (select (-> (active-sys-note-ack-below-query now sup-state user) sys-note-fields)))))
 
 (defn list-system-notifications
-  "Lists all currently active system notifications."
+  "Lists system notifications."
+  [active-only type res-limit res-offset]
+  (mapv system-listing-map
+        (select (system-notification-listing-query active-only type res-limit res-offset)
+                (sys-listing-fields)
+                (order :date_created))))
+
+(defn count-system-notifications
+  "Counts system notifications."
   [active-only type]
-  (mapv system-listing-map (select (system-notification-listing-query active-only type))))
+  ((comp :count first)
+   (select (system-notification-listing-query active-only type)
+           (aggregate (count :*) :count))))
 
 (defn get-active-system-notifications
   "This function retrieves the set of active system notifications for a given user that have not

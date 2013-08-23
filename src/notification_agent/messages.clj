@@ -109,8 +109,9 @@
        (insert-system-notif))}))
 
 (defn list-system-msgs
-  [active-only type]
-  {:system-messages (db/list-system-notifications active-only type)})
+  [active-only type limit offset]
+  {:system-messages (db/list-system-notifications active-only type limit offset)
+   :total           (db/count-system-notifications active-only type)})
 
 (defn get-system-msg
   [uuid]
