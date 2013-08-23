@@ -963,6 +963,82 @@ Sample curl:
 
     curl -X PUT -d '<JSON from the above example>' http://127.0.0.1:31320/admin/system
 
+### Admin - Listing System Notifications
+
+* Endpoint GET /admin/system
+
+This endpoint allows a client to list system notifications that match criteria
+specified in the query string. This endpoint currently accepts four query string
+parameters:
+
+<table>
+    <thead>
+        <tr><th>Parameter</th><th>Description</th><th>Required/Optional</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>active-only</td>
+            <td>
+                If this parameter is specified and set to `true` then only
+                system messages that are currently active will be returned by
+                the service. Otherwise, all system messages will be returned,
+                active or not.
+            </td>
+            <td>Optional (defaults to `false`)</td>
+        </tr>
+        <tr>
+            <td>type</td>
+            <td>
+                If this parameter is specified then only system messages of
+                the specified type will be returned by the service. The
+                `/admin/system-types` endpoint can be used to obtain a list
+                of valid system message types. Note that no validation is
+                performed on this argument. If an invalid system message type
+                is specified then the service will return an empty result set.
+            </td>
+            <td>Optional (all types of messages are returned by default)</td>
+        </tr>
+        <tr>
+            <td>limit</td>
+            <td>
+                The maximum number of results to return at a time or 0 if there
+                is no limit.
+            </td>
+            <td>Optional (defaults to 0)</td>
+        </tr>
+        <tr>
+            <td>offset</td>
+            <td>The index of the starting message.</td>
+            <td>Optional (defaults to 0)</td>
+        </tr>
+    </tbody>
+</table>
+
+All query string arguments are optional.
+
+Here's an example of a successful listing:
+
+```
+$ curl -s "http://localhost:31320/admin/system?active-only=true&type=announcement&limit=1" | python -mjson.tool
+{
+    "action": "admin-list-system-notifications",
+    "status": "success",
+    "system-messages": [
+        {
+            "activation_date": "1377211511344",
+            "date_created": "1377211511352",
+            "deactivation_date": "1388559599000",
+            "dismissible": false,
+            "logins_disabled": false,
+            "message": "foo",
+            "type": "announcement",
+            "uuid": "48c39ff1-8799-4f5d-a79f-9d228c658daa"
+        }
+    ],
+    "total": 3
+}
+```
+
 ### Admin - Getting a System Notification by UUID
 
 * Endpoint GET /admin/system/<uuid>
