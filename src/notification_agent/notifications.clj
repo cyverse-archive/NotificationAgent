@@ -6,6 +6,15 @@
   (:require [clojure.string :as string]
             [clojure.tools.logging :as log]))
 
+(defn- validate-long
+  "Validates a long integer argument."
+  [arg-name arg-value]
+  (when arg-value
+    (string->long
+     arg-value
+     ::invalid-long-integer-param
+     {:param (name arg-name) :value arg-value})))
+
 (defn- validate-field
   "Verifies that a required field is present in a possibly nested map
    structure."
@@ -97,6 +106,8 @@
 (defn handle-system-notification-listing
   "Handles a system notification listing request."
   [{:keys [active-only type limit offset]}]
+  (validate-long :limit limit)
+  (validate-long :offset offset)
   (list-system-msgs (Boolean/parseBoolean active-only) type limit offset))
 
 (defn handle-get-system-notif
