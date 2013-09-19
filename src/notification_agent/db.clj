@@ -374,28 +374,28 @@
 
    Required Paramters
       type - The system notification type.
-      deactivation-date - The date that the system notification is no longer valid.
+      deactivation_date - The date that the system notification is no longer valid.
           String containing the milliseconds since the epoch.
       message - The message that's displayed in the notification.
 
    Optional Parameters:
-      :activation-date -  The date that the system notificaiton becomes valid.
+      :activation_date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
       :dismissible? - Boolean that tells whether a user can deactivate the notification.
       :logins-disabled? - Boolean"
-  [type deactivation-date message
-   & {:keys [activation-date
+  [type deactivation_date message
+   & {:keys [activation_date
              dismissible
              logins-disabled]
-      :or   {activation-date  (millis-since-epoch)
+      :or   {activation_date  (millis-since-epoch)
              dismissible     false
              logins-disabled false}}]
   (system-map
     (insert system_notifications
             (values {:uuid                         (UUID/randomUUID)
                      :system_notification_type_id  (get-system-notification-type-id type)
-                     :activation_date              (parse-date activation-date)
-                     :deactivation_date            (parse-date deactivation-date)
+                     :activation_date              (parse-date activation_date)
+                     :deactivation_date            (parse-date deactivation_date)
                      :message                      message
                      :dismissible                  dismissible
                      :logins_disabled              logins-disabled}))))
@@ -600,15 +600,15 @@
 (defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
 
 (defn- system-notification-update-map
-  [{:keys [type deactivation-date activation-date dismissible logins-disabled message]}]
+  [{:keys [type deactivation_date activation_date dismissible logins-disabled message]}]
   (let [update-map   (atom {})
         assoc-update #(reset! update-map (assoc @update-map %1 %2))]
     (when-not (nil? type)
       (assoc-update :system_notification_type_id (get-system-notification-type-id type)))
-    (when-not (nil? deactivation-date)
-      (assoc-update :deactivation_date (fix-date deactivation-date)))
-    (when-not (nil? activation-date)
-      (assoc-update :activation_date (fix-date activation-date)))
+    (when-not (nil? deactivation_date)
+      (assoc-update :deactivation_date (fix-date deactivation_date)))
+    (when-not (nil? activation_date)
+      (assoc-update :activation_date (fix-date activation_date)))
     (when-not (nil? dismissible)
       (assoc-update :dismissible dismissible))
     (when-not (nil? logins-disabled)
@@ -625,9 +625,9 @@
 
    Optional Parameters:
       :type - The system notification type.
-      :deactivation-date - The date that the system notification is no longer valid.
+      :deactivation_date - The date that the system notification is no longer valid.
           String containing the milliseconds since the epoch.
-      :activation-date -  The date that the system notificaiton becomes valid.
+      :activation_date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
       :dismissible - Boolean that tells whether a user can deactivate the notification.
       :logins-disabled - Boolean
