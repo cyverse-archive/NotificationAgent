@@ -28,10 +28,10 @@
   "Verifies that time when a system message is active has a positive duration and is not entirely in
    the past."
   [req]
-  (let [end-time (timestamp->millis (:deactivation-date req))]
+  (let [end-time (timestamp->millis (:deactivation_date req))]
   (when (<= end-time (System/currentTimeMillis))
     (throw (IllegalArgumentException. "The provided deactivation date is in the past.")))
-  (when-let [beg-time (:activation-date req)]
+  (when-let [beg-time (:activation_date req)]
     (when (<= end-time (timestamp->millis beg-time))
       (throw (IllegalArgumentException.
                "The activation date needs to be prior to the deactivation date."))))))
@@ -43,7 +43,7 @@
   [[:type] [:user] [:subject]])
 
 (def ^{:private true} required-system-fields
-  [[:type] [:deactivation-date] [:message]])
+  [[:type] [:deactivation_date] [:message]])
 
 (defn- validate-request
   "Verifies that an incoming message request contains all of the required

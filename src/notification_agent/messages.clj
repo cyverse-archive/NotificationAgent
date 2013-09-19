@@ -87,8 +87,8 @@
 (defn- optional-insert-system-args
   [msg]
   (let [argseq (atom [])]
-    (when (contains? msg :activation-date)
-      (reset! argseq (conj @argseq [:activation-date (str (timestamp->millis (:activation-date msg)))])))
+    (when (contains? msg :activation_date)
+      (reset! argseq (conj @argseq [:activation_date (str (timestamp->millis (:activation_date msg)))])))
     (when (contains? msg :dismissible)
       (reset! argseq (conj @argseq [:dismissible (:dismissible msg)])))
     (when (contains? msg :logins-disabled)
@@ -99,7 +99,7 @@
   "Persists a system notification in the database."
   [msg]
   (let [type                (:type msg)
-        ddate               (str (timestamp->millis (:deactivation-date msg)))
+        ddate               (str (timestamp->millis (:deactivation_date msg)))
         message             (:message msg)
         insert-system-notif (partial db/insert-system-notification type ddate message)
         sys-args            (optional-insert-system-args msg)]

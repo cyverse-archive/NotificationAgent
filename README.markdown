@@ -50,7 +50,7 @@ status information in the OSM:
 {
     "type": "some_notification_type",
     "analysis_name" : "Some analysis name",
-    "completion_date" : "Tue Jan 31 2012 08:58:40 GMT-0700 (MST)",
+    "completion_date" : 1340390297000,
     "analysis_description" : "Some analysis description",
     "status" : "status-name",
     "output_dir" : "/path/to/job/output/directory/",
@@ -459,7 +459,7 @@ format that is used to store the job state information in the OSM:
         "analysis_description": "Some analysis description",
         "analysis_id": "analysis-identifier",
         "analysis_name": "Some analysis name",
-        "completion_date": "Tue Jan 31 2012 08:58:40 GMT-0700 (MST)",
+        "completion_date": 1340390297000,
         "condor-log-dir": "/path/to/directory/containing/condor/log/files/",
         "dag_id": "directed-acyclic-graph-identifier",
         "description": "",
@@ -932,14 +932,14 @@ JSON that looks something like the following:
     {
       "type" : "warning",
       "message" : "This is a warning",
-      "deactivation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
-      "activation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "deactivation_date" : 1340390297000,
+      "activation_date" : 1340390297000,
       "dismissible" : false,
       "logins-disabled" : false
     }
 
 
-The 'type', 'message', and 'deactivation-date' keys are required. The rest are
+The 'type', 'message', and 'deactivation_date' keys are required. The rest are
 optional.
 
 The response body for a successful addition will look something like the following:
@@ -948,9 +948,9 @@ The response body for a successful addition will look something like the followi
       "action" : "add-system-notification",
       "success": true,
       "system-notification" : {
-        "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
-        "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
-        "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+        "activation_date": 1340390297000,
+        "date_created": 1340390297000,
+        "deactivation_date": 1340390297000,
         "dismissible": false,
         "logins_disabled": false,
         "message": "This is a warning",
@@ -1057,9 +1057,9 @@ The response body for a successful lookup will look something like the following
       "action" : "get-system-notification",
       "success": true,
       "system-notification" : {
-        "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
-        "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
-        "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+        "activation_date": 1340390297000,
+        "date_created": 1340390297000,
+        "deactivation_date": 1340390297000,
         "dismissible": false,
         "logins_disabled": false,
         "message": "This is a warning",
@@ -1091,8 +1091,8 @@ JSON that looks something like the following:
       "system-notification" : {
         "type" : "warning",
         "message" : "This is a warning",
-        "deactivation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
-        "activation-date" : "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+        "deactivation_date" : 1340390297000,
+        "activation_date" : 1340390297000,
         "dismissible" : false,
         "logins-disabled" : false
       }
@@ -1103,9 +1103,9 @@ All keys are optional.
 The response body for a successful update will look something like the following:
 
     {
-      "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
-      "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
-      "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+      "activation_date": 1340390297000,
+      "date_created": 1340390297000,
+      "deactivation_date": 1340390297000,
       "dismissible": false,
       "logins_disabled": false,
       "message": "This is a warning",
@@ -1136,9 +1136,9 @@ The response body for a successful deletion will look something like the followi
       "action" : "delete-system-notification",
       "success" : true,
       "system-notification" : {
-        "activation_date": "Tue Apr 09 2013 15:17:54 GMT-0700 (MST)",
-        "date_created": "Tue Apr 09 2013 22:17:54 GMT-0700 (MST)",
-        "deactivation_date": "Mon Dec 02 2013 12:00:00 GMT-0700 (MST)",
+        "activation_date": 1340390297000,
+        "date_created": 1340390297000,
+        "deactivation_date": 1340390297000,
         "dismissible": false,
         "logins_disabled": false,
         "message": "This is a warning",
@@ -1202,10 +1202,10 @@ The response body for a successful lookup will look like the following:
 {
   "system-messages" : [
     {
-      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "deactivation_date" : 1340390297000,
       "dismissible" : true,
-      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
-      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "activation_date" : 1340390297000,
+      "date_created" : 1340390297000,
       "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
       "type" : "warning",
       "message" : "I like cake",
@@ -1285,10 +1285,10 @@ The response body for a successful lookup with look like the following:
 {
   "system-messages" : [
     {
-      "deactivation_date" : "Thu Apr 11 2013 11:59:00 GMT-0700 (MST)",
+      "deactivation_date" : 1340390297000,
       "dismissible" : true,
-      "activation_date" : "Thu Apr 11 2013 11:15:21 GMT-0700 (MST)",
-      "date_created" : "Thu Apr 11 2013 18:15:20 GMT-0700 (MST)",
+      "activation_date" : 1340390297000,
+      "date_created" : 1340390297000,
       "uuid" : "933ab627-5d1e-4cd9-b6e8-ff5462243637",
       "type" : "warning",
       "message" : "I like cake",
