@@ -382,14 +382,14 @@
       :activation_date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
       :dismissible? - Boolean that tells whether a user can deactivate the notification.
-      :logins-disabled? - Boolean"
+      :logins_disabled? - Boolean"
   [type deactivation_date message
    & {:keys [activation_date
              dismissible
-             logins-disabled]
+             logins_disabled]
       :or   {activation_date  (millis-since-epoch)
              dismissible     false
-             logins-disabled false}}]
+             logins_disabled false}}]
   (system-map
     (insert system_notifications
             (values {:uuid                         (UUID/randomUUID)
@@ -398,7 +398,7 @@
                      :deactivation_date            (parse-date deactivation_date)
                      :message                      message
                      :dismissible                  dismissible
-                     :logins_disabled              logins-disabled}))))
+                     :logins_disabled              logins_disabled}))))
 
 (defn get-system-notification-by-uuid
   "Selects system notifications that have a uuid of 'uuid'."
@@ -600,7 +600,7 @@
 (defn- fix-date [a-date] (Timestamp. (-> a-date time/timestamp->millis)))
 
 (defn- system-notification-update-map
-  [{:keys [type deactivation_date activation_date dismissible logins-disabled message]}]
+  [{:keys [type deactivation_date activation_date dismissible logins_disabled message]}]
   (let [update-map   (atom {})
         assoc-update #(reset! update-map (assoc @update-map %1 %2))]
     (when-not (nil? type)
@@ -611,8 +611,8 @@
       (assoc-update :activation_date (fix-date activation_date)))
     (when-not (nil? dismissible)
       (assoc-update :dismissible dismissible))
-    (when-not (nil? logins-disabled)
-      (assoc-update :logins_disabled logins-disabled))
+    (when-not (nil? logins_disabled)
+      (assoc-update :logins_disabled logins_disabled))
     (when-not (nil? message)
       (assoc-update :message message))
     @update-map))
@@ -630,7 +630,7 @@
       :activation_date -  The date that the system notificaiton becomes valid.
           String containing the milliseconds since the epoch.
       :dismissible - Boolean that tells whether a user can deactivate the notification.
-      :logins-disabled - Boolean
+      :logins_disabled - Boolean
       :message - The message that's displayed in the notification."
   [uuid update-values]
   (system-map

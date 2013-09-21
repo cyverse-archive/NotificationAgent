@@ -91,8 +91,8 @@
       (reset! argseq (conj @argseq [:activation_date (str (timestamp->millis (:activation_date msg)))])))
     (when (contains? msg :dismissible)
       (reset! argseq (conj @argseq [:dismissible (:dismissible msg)])))
-    (when (contains? msg :logins-disabled)
-      (reset! argseq (conj @argseq [:logins-disabled (:logins-disabled msg)])))
+    (when (contains? msg :logins_disabled)
+      (reset! argseq (conj @argseq [:logins_disabled (:logins_disabled msg)])))
     (flatten @argseq)))
 
 (defn persist-system-msg

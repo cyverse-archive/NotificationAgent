@@ -935,7 +935,7 @@ JSON that looks something like the following:
       "deactivation_date" : 1340390297000,
       "activation_date" : 1340390297000,
       "dismissible" : false,
-      "logins-disabled" : false
+      "logins_disabled" : false
     }
 
 
@@ -1094,7 +1094,7 @@ JSON that looks something like the following:
         "deactivation_date" : 1340390297000,
         "activation_date" : 1340390297000,
         "dismissible" : false,
-        "logins-disabled" : false
+        "logins_disabled" : false
       }
     }
 
