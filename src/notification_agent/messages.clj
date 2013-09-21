@@ -86,14 +86,11 @@
 
 (defn- optional-insert-system-args
   [msg]
-  (let [argseq (atom [])]
-    (when (contains? msg :activation_date)
-      (reset! argseq (conj @argseq [:activation_date (str (timestamp->millis (:activation_date msg)))])))
-    (when (contains? msg :dismissible)
-      (reset! argseq (conj @argseq [:dismissible (:dismissible msg)])))
-    (when (contains? msg :logins_disabled)
-      (reset! argseq (conj @argseq [:logins_disabled (:logins_disabled msg)])))
-    (flatten @argseq)))
+  (->> [[:activation_date (str (timestamp->millis (:activation_date msg)))]
+        [:dismissible     (:dismissible msg)]
+        [:logins_disabled (:logins_disabled msg)]]
+       (remove (fn [[_ v]] (nil? v)))
+       (flatten)))
 
 (defn persist-system-msg
   "Persists a system notification in the database."

@@ -601,21 +601,15 @@
 
 (defn- system-notification-update-map
   [{:keys [type deactivation_date activation_date dismissible logins_disabled message]}]
-  (let [update-map   (atom {})
-        assoc-update #(reset! update-map (assoc @update-map %1 %2))]
-    (when-not (nil? type)
-      (assoc-update :system_notification_type_id (get-system-notification-type-id type)))
-    (when-not (nil? deactivation_date)
-      (assoc-update :deactivation_date (fix-date deactivation_date)))
-    (when-not (nil? activation_date)
-      (assoc-update :activation_date (fix-date activation_date)))
-    (when-not (nil? dismissible)
-      (assoc-update :dismissible dismissible))
-    (when-not (nil? logins_disabled)
-      (assoc-update :logins_disabled logins_disabled))
-    (when-not (nil? message)
-      (assoc-update :message message))
-    @update-map))
+  (letfn [(get-val [f v] (when-not (nil? v) (f v)))]
+    (->> {:system_notification_type_id (get-val get-system-notification-type-id type)
+          :deactivation_date           (get-val fix-date deactivation_date)
+          :activation_date             (get-val fix-date activation_date)
+          :dismissible                 (get-val identity dismissible)
+          :logins_disabled             (get-val identity logins_disabled)
+          :message                     (get-val identity message)}
+         (remove (fn [[_ v]] (nil? v)))
+         (into {}))))
 
 (defn update-system-notification
   "Updates a system notification.
