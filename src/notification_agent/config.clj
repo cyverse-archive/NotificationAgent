@@ -89,7 +89,7 @@
 (cc/defprop-optvec notification-recipients
   "The list of URLs to send notifications to."
   [props config-valid configs]
-  "notificationagent.notification-recipients")
+  "notificationagent.recipients")
 
 (cc/defprop-int listen-port
   "The port to listen to for incoming connections."
