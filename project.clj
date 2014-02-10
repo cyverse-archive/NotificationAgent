@@ -1,11 +1,20 @@
-(defproject notificationagent "2.0.5-SNAPSHOT"
-  :description "Notification Agent v1.2.0"
+(defproject notificationagent "2.0.6-SNAPSHOT"
+  :description "A web service for storing and forwarding notifications."
+  :url "http://www.iplantcollaborative.org"
+  :license {:name "BSD"
+            :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
+  :scm {:connection "scm:git:git@github.com:iPlantCollaborativeOpenSource/NotificationAgent.git"
+        :developerConnection "scm:git:git@github.com:iPlantCollaborativeOpenSource/NotificationAgent.git"
+        :url "git@github.com:iPlantCollaborativeOpenSource/NotificationAgent.git"}
+  :pom-addition [:developers
+                 [:developer
+                  [:url "https://github.com/orgs/iPlantCollaborativeOpenSource/teams/iplant-devs"]]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.logging "0.2.3"]
                  [cheshire "5.0.1"]
                  [compojure "1.0.2"]
-                 [org.iplantc/clojure-commons "1.4.1-SNAPSHOT"]
-                 [org.iplantc/kameleon "0.1.3-SNAPSHOT"]
+                 [org.iplantc/clojure-commons "1.4.8-SNAPSHOT"]
+                 [org.iplantc/kameleon "1.8.4-SNAPSHOT"]
                  [clj-http "0.5.5"]
                  [clj-time "0.5.0"]
                  [ring/ring-jetty-adapter "1.1.0"]
@@ -29,5 +38,7 @@
   :aot [notification-agent.core]
   :main notification-agent.core
   :uberjar-exclusions [#"(?i)[.]sf"]
-  :repositories {"iplantCollaborative"
-                 "http://projects.iplantcollaborative.org/archiva/repository/internal/"})
+  :repositories [["sonatype-nexus-snapshots"
+                  {:url "https://oss.sonatype.org/content/repositories/snapshots"}]]
+  :deploy-repositories [["sonatype-nexus-staging"
+                         {:url "https://oss.sonatype.org/service/local/staging/deploy/maven2/"}]])
