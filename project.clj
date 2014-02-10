@@ -1,4 +1,4 @@
-(defproject notificationagent "2.0.6-SNAPSHOT"
+(defproject org.iplantc/notificationagent "2.0.6-SNAPSHOT"
   :description "A web service for storing and forwarding notifications."
   :url "http://www.iplantcollaborative.org"
   :license {:name "BSD"
