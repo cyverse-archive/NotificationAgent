@@ -222,6 +222,6 @@
 (defn -main
   [& _]
   (load-config-from-zookeeper)
-  (initialize-job-status-service)
+  (future (initialize-job-status-service))
   (log/warn "Listening on" (config/listen-port))
   (jetty/run-jetty (site-handler notificationagent-routes) {:port (config/listen-port)}))

@@ -1,4 +1,4 @@
-(defproject org.iplantc/notificationagent "2.0.6"
+(defproject org.iplantc/notificationagent "2.0.7"
   :description "A web service for storing and forwarding notifications."
   :url "http://www.iplantcollaborative.org"
   :license {:name "BSD"
@@ -15,8 +15,8 @@
                  [org.clojure/tools.logging "0.2.3"]
                  [cheshire "5.0.1"]
                  [compojure "1.0.2"]
-                 [org.iplantc/clojure-commons "1.4.8"]
-                 [org.iplantc/kameleon "1.8.4"]
+                 [org.iplantc/clojure-commons "1.4.9"]
+                 [org.iplantc/kameleon "1.8.6"]
                  [clj-http "0.5.5"]
                  [clj-time "0.5.0"]
                  [ring/ring-jetty-adapter "1.1.0"]
